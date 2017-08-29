@@ -5,8 +5,8 @@
 package gin
 
 import (
-	"log"
-	"os"
+	"fmt"
+	"io"
 	"time"
 )
 
@@ -22,61 +22,79 @@ var (
 )
 
 func ErrorLogger() HandlerFunc {
-	return ErrorLoggerT(ErrorTypeAll)
+	return ErrorLoggerT(ErrorTypeAny)
 }
 
-func ErrorLoggerT(typ uint32) HandlerFunc {
+func ErrorLoggerT(typ ErrorType) HandlerFunc {
 	return func(c *Context) {
 		c.Next()
-
-		errs := c.Errors.ByType(typ)
-		if len(errs) > 0 {
-			// -1 status code = do not change current one
-			c.JSON(-1, c.Errors)
+		errors := c.Errors.ByType(typ)
+		if len(errors) > 0 {
+			c.JSON(-1, errors)
 		}
 	}
 }
 
+// Logger instances a Logger middleware that will write the logs to gin.DefaultWriter
+// By default gin.DefaultWriter = os.Stdout
 func Logger() HandlerFunc {
-	stdlogger := log.New(os.Stdout, "", 0)
-	//errlogger := log.New(os.Stderr, "", 0)
+	return LoggerWithWriter(DefaultWriter)
+}
+
+// LoggerWithWriter instance a Logger middleware with the specified writter buffer.
+// Example: os.Stdout, a file opened in write mode, a socket...
+func LoggerWithWriter(out io.Writer, notlogged ...string) HandlerFunc {
+	var skip map[string]struct{}
+
+	if length := len(notlogged); length > 0 {
+		skip = make(map[string]struct{}, length)
+
+		for _, path := range notlogged {
+			skip[path] = struct{}{}
+		}
+	}
 
 	return func(c *Context) {
 		// Start timer
 		start := time.Now()
+		path := c.Request.URL.Path
 
 		// Process request
 		c.Next()
 
-		// Stop timer
-		end := time.Now()
-		latency := end.Sub(start)
+		// Log only when path is not being skipped
+		if _, ok := skip[path]; !ok {
+			// Stop timer
+			end := time.Now()
+			latency := end.Sub(start)
 
-		clientIP := c.ClientIP()
-		method := c.Request.Method
-		statusCode := c.Writer.Status()
-		statusColor := colorForStatus(statusCode)
-		methodColor := colorForMethod(method)
+			clientIP := c.ClientIP()
+			method := c.Request.Method
+			statusCode := c.Writer.Status()
+			statusColor := colorForStatus(statusCode)
+			methodColor := colorForMethod(method)
+			comment := c.Errors.ByType(ErrorTypePrivate).String()
 
-		stdlogger.Printf("[GIN] %v |%s %3d %s| %12v | %s |%s  %s %-7s %s\n%s",
-			end.Format("2006/01/02 - 15:04:05"),
-			statusColor, statusCode, reset,
-			latency,
-			clientIP,
-			methodColor, reset, method,
-			c.Request.URL.Path,
-			c.Errors.String(),
-		)
+			fmt.Fprintf(out, "[GIN] %v |%s %3d %s| %13v | %s |%s  %s %-7s %s\n%s",
+				end.Format("2006/01/02 - 15:04:05"),
+				statusColor, statusCode, reset,
+				latency,
+				clientIP,
+				methodColor, reset, method,
+				path,
+				comment,
+			)
+		}
 	}
 }
 
 func colorForStatus(code int) string {
 	switch {
-	case code >= 200 && code <= 299:
+	case code >= 200 && code < 300:
 		return green
-	case code >= 300 && code <= 399:
+	case code >= 300 && code < 400:
 		return white
-	case code >= 400 && code <= 499:
+	case code >= 400 && code < 500:
 		return yellow
 	default:
 		return red
@@ -84,20 +102,20 @@ func colorForStatus(code int) string {
 }
 
 func colorForMethod(method string) string {
-	switch {
-	case method == "GET":
+	switch method {
+	case "GET":
 		return blue
-	case method == "POST":
+	case "POST":
 		return cyan
-	case method == "PUT":
+	case "PUT":
 		return yellow
-	case method == "DELETE":
+	case "DELETE":
 		return red
-	case method == "PATCH":
+	case "PATCH":
 		return green
-	case method == "HEAD":
+	case "HEAD":
 		return magenta
-	case method == "OPTIONS":
+	case "OPTIONS":
 		return white
 	default:
 		return reset
