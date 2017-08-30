@@ -1,17 +1,20 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"github.com/golang/glog"
+	"github.com/gorilla/websocket"
 )
 
 type K8sNode struct {
@@ -40,23 +43,47 @@ type Vips struct {
 	Other     string
 }
 
-type Template struct {
-	Src  string `json:"-"`
-	Dest string `json:"-"`
+type DeploySeed struct {
+	Hosts Hosts
+	// Templates []*Template `yaml:"-" json:"-"`
+	Vips Vips
 }
 
-type DeploySeed struct {
-	Hosts     Hosts
-	Templates []*Template `yaml:"-" json:"-"`
-	Vips      Vips
+var (
+	upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+	ansibleChan = make(chan map[string]interface{}, 15)
+
+	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
+)
+
+func init() {
+	flag.Parse()
+
+	if err := os.Chdir(*workDir); err != nil {
+		glog.Fatalf("change working directory to %s error: %v", *workDir, err)
+	}
+
+	files, err := ioutil.ReadDir(".")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range files {
+		glog.V(3).Infof("file %s have mode %s", f.Name(), f.Mode().String())
+		if f.IsDir() && strings.HasSuffix(f.Name(), "-playbook") {
+
+		}
+	}
 }
 
 func main() {
-	flag.Parse()
 	defer glog.Flush()
 
 	r := gin.Default()
-
 	r.StaticFile("/favicon.ico", "./favicon.ico")
 
 	v1 := r.Group("/v1")
@@ -65,6 +92,7 @@ func main() {
 		v1.GET("/config", getConfig)
 		v1.PUT("/launch", launch)
 		v1.POST("/notify", notify)
+		v1.GET("/stats", stats)
 	}
 
 	// Listen and Server in 0.0.0.0:8080
@@ -73,7 +101,7 @@ func main() {
 
 func setConfig(c *gin.Context) {
 	config := &DeploySeed{}
-	if err := c.BindWith(config, binding.JSON); err != nil {
+	if err := c.BindJSON(config); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -120,9 +148,45 @@ func launch(c *gin.Context) {
 }
 
 func notify(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, gin.H{
-		"status": "started",
-	})
+	config := make(map[string]interface{})
+	if err := c.BindJSON(&config); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	glog.V(4).Info(config)
+	select {
+	case ansibleChan <- config:
+	default:
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func stats(c *gin.Context) {
+	wc, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		glog.Errorf("upgrade error: %v", err)
+		return
+	}
+	defer wc.Close()
+
+	for {
+		m := <-ansibleChan
+		b, err := json.Marshal(m)
+		if err != nil {
+			glog.Errorf("marshal ansible message error: %v", err)
+			break
+		}
+
+		err = wc.WriteMessage(websocket.TextMessage, b)
+		if err != nil {
+			glog.Errorf("write message error: %v", err)
+			break
+		}
+	}
 }
 
 func saveConfig(s *DeploySeed) error {

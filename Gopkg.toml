@@ -23,3 +23,7 @@
 [[override]]
   name = "github.com/gin-gonic/gin"
   version = "v1.2"
+
+[[override]]
+  name = "github.com/gorilla/websocket"
+  version = "v1.2.0"
