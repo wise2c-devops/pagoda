@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
+
+	"gitee.com/wisecloud/wise-deploy/playbook"
 
 	"gopkg.in/yaml.v2"
 
@@ -16,38 +16,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 )
-
-type K8sNode struct {
-	Wise2cController []string `yaml:"wise2cController"`
-	Normal           []string `yaml:"normal"`
-}
-
-type Hosts struct {
-	Etcd         []string `yaml:"etcd"`
-	K8sMaster    []string `yaml:"k8sMaster"`
-	K8sNode      K8sNode  `yaml:"k8sNode"`
-	LoadBalancer []string `yaml:"loadBalancer"`
-	Registry     []string `yaml:"registry"`
-	MysqlMaster  string   `yaml:"mysqlMaster"`
-	MysqlSlave1  string   `yaml:"mysqlSlave1"`
-	MysqlSlave2  string   `yaml:"mysqlSlave2"`
-	Distincts    []string `yaml:"-" json:"-"`
-}
-
-type Vips struct {
-	Interface string
-	NetMask   int `yaml:"netMask"`
-	K8s       string
-	Es        string
-	Registry  string `yaml:"registry"`
-	Other     string
-}
-
-type DeploySeed struct {
-	Hosts Hosts
-	// Templates []*Template `yaml:"-" json:"-"`
-	Vips Vips
-}
 
 var (
 	upgrader = websocket.Upgrader{
@@ -62,45 +30,56 @@ var (
 
 func init() {
 	flag.Parse()
-
-	if err := os.Chdir(*workDir); err != nil {
-		glog.Fatalf("change working directory to %s error: %v", *workDir, err)
-	}
-
-	files, err := ioutil.ReadDir(".")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, f := range files {
-		glog.V(3).Infof("file %s have mode %s", f.Name(), f.Mode().String())
-		if f.IsDir() && strings.HasSuffix(f.Name(), "-playbook") {
-
-		}
-	}
 }
 
 func main() {
 	defer glog.Flush()
 
 	r := gin.Default()
-	r.StaticFile("/favicon.ico", "./favicon.ico")
+	r.StaticFile("/favicon.ico", "favicon.ico")
 
 	v1 := r.Group("/v1")
 	{
 		v1.PUT("/config", setConfig)
 		v1.GET("/config", getConfig)
 		v1.PUT("/launch", launch)
+		v1.PUT("/stop", stop)
 		v1.POST("/notify", notify)
 		v1.GET("/stats", stats)
+		v1.Static("/docs", "apidoc")
 	}
 
 	// Listen and Server in 0.0.0.0:8080
 	r.Run(":8080")
 }
 
+/**
+ *
+ * @api {put} /config setConfig
+ * @apiName setConfig
+ * @apiGroup v1
+ * @apiVersion  1.0.0
+ *
+ *
+ * @apiParam  {String} paramName description
+ *
+ * @apiSuccess (200) {object} name description
+ *
+ * @apiParamExample  {type} Request-Example:
+   {
+	   property : value
+   }
+ *
+ *
+ * @apiSuccessExample {type} Success-Response:
+   {
+	   property : value
+   }
+ *
+ *
+*/
 func setConfig(c *gin.Context) {
-	config := &DeploySeed{}
+	config := &playbook.DeploySeed{}
 	if err := c.BindJSON(config); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -147,6 +126,16 @@ func launch(c *gin.Context) {
 	})
 }
 
+func stop(c *gin.Context) {
+	os.Setenv("ANSIBLE_CONFIG", "hehe")
+	o, _ := exec.Command("echo", os.Getenv("ANSIBLE_CONFIG")).CombinedOutput()
+	glog.Error(string(o))
+	os.Setenv("ANSIBLE_CONFIG", "haha")
+	o, _ = exec.Command("echo $HOME").Output()
+	glog.Error(string(o))
+	return
+}
+
 func notify(c *gin.Context) {
 	config := make(map[string]interface{})
 	if err := c.BindJSON(&config); err != nil {
@@ -189,7 +178,7 @@ func stats(c *gin.Context) {
 	}
 }
 
-func saveConfig(s *DeploySeed) error {
+func saveConfig(s *playbook.DeploySeed) error {
 	b, err := yaml.Marshal(s)
 	if err != nil {
 		return err
@@ -200,17 +189,22 @@ func saveConfig(s *DeploySeed) error {
 		return err
 	}
 
+	err = playbook.PreparePlaybooks(*workDir, s)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func readConfig(filename string) (*DeploySeed, error) {
+func readConfig(filename string) (*playbook.DeploySeed, error) {
 	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		glog.Errorf("read init.yml error: %v", err)
 		return nil, err
 	}
 
-	d := &DeploySeed{}
+	d := &playbook.DeploySeed{}
 	err = yaml.Unmarshal(b, d)
 	if err != nil {
 		glog.Errorf("unmarshal init.yml error: %v", err)
