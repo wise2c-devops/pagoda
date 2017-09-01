@@ -1,51 +1,40 @@
 package main
 
 import (
-	"fmt"
 	"os/exec"
 	"path"
-	"sort"
 
 	"gitee.com/wisecloud/wise-deploy/playbook"
 
 	"github.com/golang/glog"
 )
 
+type CompleteCode int
+
 const (
-	registry     = "registry"
-	etcd         = "etcd"
-	loadbalancer = "loadbalancer"
-	mysql        = "mysql"
-	k8sMaster    = "k8sMaster"
-	k8sNode      = "k8sNode"
-	wiseCloud    = "wiseCloud"
+	finished CompleteCode = iota
+	stopped
+	failed
 )
 
 type Commands struct {
-	supported    []string
 	received     []string
 	currentIndex int
 	currentCmd   *exec.Cmd
 	stopChan     chan bool
 	nextChan     chan bool
-	cmdChan      chan []string
+	installChan  chan []string
+	resetChan    chan []string
+	ansibleFile  string
 }
 
 func NewCommands() *Commands {
 	return &Commands{
-		supported: []string{
-			registry,
-			etcd,
-			loadbalancer,
-			mysql,
-			k8sMaster,
-			k8sNode,
-			wiseCloud,
-		},
 		currentIndex: -1,
 		stopChan:     make(chan bool),
-		nextChan:     make(chan bool, 1),
-		cmdChan:      make(chan []string),
+		nextChan:     make(chan bool, 1), //the length must be one
+		installChan:  make(chan []string),
+		resetChan:    make(chan []string),
 	}
 }
 
@@ -53,81 +42,74 @@ func (c *Commands) Launch(w string) {
 	for {
 		select {
 		case <-c.stopChan:
-			if err := c.currentCmd.Process.Kill(); err != nil {
-				glog.Errorf("stop install error: %v", err)
-			}
+			c.complete(stopped)
 		case next := <-c.nextChan:
 			if next {
 				c.currentIndex++
-				if c.currentIndex == len(c.supported) {
-					glog.V(3).Info("complete all install step")
-					c.currentIndex = -1
+				if c.currentIndex == len(c.received) {
+					c.complete(finished)
 					break
 				}
-				for ; c.currentIndex < len(c.supported); c.currentIndex++ {
-					step := c.supported[c.currentIndex]
-					index := sort.SearchStrings(c.received, step)
-					if index < len(c.received) && c.received[index] == step {
-						cmd := exec.Command("ansible-playbook", "install.ansible")
-						cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix)
-						c.currentCmd = cmd
-
-						go func() {
-							glog.V(3).Infof("start step %s", step)
-							err := cmd.Run()
-							if err != nil {
-								c.nextChan <- false
-							} else {
-								c.nextChan <- true
-							}
-						}()
-
-						break
-					}
-				}
+				c.run(w)
 			} else {
-				glog.V(3).Info("failed at a step")
-				c.currentIndex = -1
+				c.complete(failed)
 			}
-		case rec := <-c.cmdChan:
+		case rec := <-c.installChan:
 			c.received = rec
-			sort.Strings(c.received)
+			c.ansibleFile = "install.ansible"
+			c.nextChan <- true
+		case rec := <-c.resetChan:
+			c.received = rec
+			c.ansibleFile = "reset.ansible"
 			c.nextChan <- true
 		}
 	}
 }
 
-func (c *Commands) Start(recv []string) {
-	c.cmdChan <- recv
+func (c *Commands) Install(recv []string) {
+	c.installChan <- recv
+}
+
+func (c *Commands) Reset(recv []string) {
+	c.resetChan <- recv
 }
 
 func (c *Commands) Stop() {
 	c.stopChan <- true
 }
 
-func (c *Commands) Run(rec []string) error {
-	sort.Strings(rec)
-	for _, i := range c.supported {
-		if index := sort.SearchStrings(rec, i); index < len(rec) && rec[index] == i {
-			cmd := exec.Command("ansible-playbook")
-			cmd.Env = append(cmd.Env, "ANSIBLE_CONFIG=?")
-			cmd.Env = append(cmd.Env, "ANSIBLE_host=?")
+func (c *Commands) run(w string) {
+	for ; c.currentIndex < len(c.received); c.currentIndex++ {
+		step := c.received[c.currentIndex]
+		cmd := exec.Command("ansible-playbook", c.ansibleFile)
+		cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix)
+		c.currentCmd = cmd
 
-			go func() {
-				err := cmd.Run()
-				if err != nil {
-					c.nextChan <- false
-				} else {
-					c.nextChan <- true
-				}
-			}()
-
-			b := <-c.nextChan
-			if !b {
-				return fmt.Errorf("get error")
+		go func() {
+			glog.V(3).Infof("start step %s", step)
+			err := cmd.Run()
+			if err != nil {
+				c.nextChan <- false
+			} else {
+				c.nextChan <- true
 			}
+		}()
+
+		return
+	}
+}
+
+func (c *Commands) complete(code CompleteCode) {
+	switch code {
+	case finished:
+		glog.V(3).Info("complete all install step")
+	case stopped:
+		if err := c.currentCmd.Process.Kill(); err != nil {
+			glog.Errorf("stop install error: %v", err)
 		}
+	case failed:
+		glog.V(3).Info("failed at a step")
 	}
 
-	return nil
+	c.currentIndex = -1
 }

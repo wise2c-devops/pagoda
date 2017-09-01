@@ -22,7 +22,7 @@ var (
 			return true
 		},
 	}
-	ansibleChan = make(chan map[string]interface{}, 15)
+	ansibleChan = make(chan map[string]interface{})
 	commands    = NewCommands()
 
 	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
@@ -43,7 +43,8 @@ func main() {
 	{
 		v1.PUT("/config", setConfig)
 		v1.GET("/config", getConfig)
-		v1.PUT("/launch", launch)
+		v1.PUT("/install", install)
+		v1.PUT("/reset", reset)
 		v1.PUT("/stop", stop)
 		v1.POST("/notify", notify)
 		v1.GET("/stats", stats)
@@ -54,31 +55,6 @@ func main() {
 	r.Run(":8080")
 }
 
-/**
- *
- * @api {put} /config setConfig
- * @apiName setConfig
- * @apiGroup v1
- * @apiVersion  1.0.0
- *
- *
- * @apiParam  {String} paramName description
- *
- * @apiSuccess (200) {object} name description
- *
- * @apiParamExample  {type} Request-Example:
-   {
-	   property : value
-   }
- *
- *
- * @apiSuccessExample {type} Success-Response:
-   {
-	   property : value
-   }
- *
- *
-*/
 func setConfig(c *gin.Context) {
 	config := &playbook.DeploySeed{}
 	if err := c.BindJSON(config); err != nil {
@@ -111,7 +87,7 @@ func getConfig(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, d)
 }
 
-func launch(c *gin.Context) {
+func install(c *gin.Context) {
 	config := &playbook.DeploySeed{}
 	if err := c.BindJSON(config); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
@@ -127,7 +103,30 @@ func launch(c *gin.Context) {
 		return
 	}
 
-	commands.Start(config.Step)
+	commands.Install(config.Step)
+
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"status": "started",
+	})
+}
+
+func reset(c *gin.Context) {
+	config := &playbook.DeploySeed{}
+	if err := c.BindJSON(config); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	if err := playbook.PreparePlaybooks(*workDir, config); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	commands.Reset(config.Step)
 
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"status": "started",
