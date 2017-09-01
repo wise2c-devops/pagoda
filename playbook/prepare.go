@@ -42,6 +42,7 @@ type DeploySeed struct {
 	Hosts Hosts
 	// Templates []*Template `yaml:"-" json:"-"`
 	Vips Vips
+	Step []string
 }
 
 // Template src is template path and dest is template output file
@@ -51,10 +52,10 @@ type Template struct {
 }
 
 const (
-	playbookSuffix  = "-playbook"
+	PlaybookSuffix  = "-playbook"
 	ansibleGroupDir = "group_vars"
 	hostsTmpl       = "hosts.gotmpl"
-	hostsFile       = "hosts"
+	HostsFile       = "hosts"
 	tmplDir         = "yat"
 	tmplSuffix      = ".gotmpl"
 )
@@ -67,7 +68,7 @@ func PreparePlaybooks(dir string, ds *DeploySeed) error {
 
 	for _, f := range files {
 		glog.V(3).Infof("file %s have mode %s", f.Name(), f.Mode().String())
-		if f.IsDir() && strings.HasSuffix(f.Name(), playbookSuffix) {
+		if f.IsDir() && strings.HasSuffix(f.Name(), PlaybookSuffix) {
 			if err = preparePlaybook(path.Join(dir, f.Name()), ds); err != nil {
 				return err
 			}
@@ -78,7 +79,7 @@ func PreparePlaybooks(dir string, ds *DeploySeed) error {
 }
 
 func preparePlaybook(name string, ds *DeploySeed) error {
-	tps, err := GetTemplatePath(name)
+	tps, err := getTemplatePath(name)
 	if err != nil {
 		return err
 	}
@@ -113,8 +114,8 @@ func applyTemplate(t *Template, ds *DeploySeed) error {
 	return nil
 }
 
-// GetTemplatePath - check playbook, get every template path & output file
-func GetTemplatePath(name string) ([]*Template, error) {
+// getTemplatePath - check playbook, get every template path & output file
+func getTemplatePath(name string) ([]*Template, error) {
 	if err := checkPlaybook(name); err != nil {
 		return nil, err
 	}
@@ -128,13 +129,13 @@ func GetTemplatePath(name string) ([]*Template, error) {
 	for _, f := range files {
 		if f.Name() == hostsTmpl {
 			t := &Template{
-				Src:  path.Join(name, f.Name()),
-				Dest: path.Join(name, hostsFile),
+				Src:  path.Join(name, tmplDir, f.Name()),
+				Dest: path.Join(name, HostsFile),
 			}
 			tps = append(tps, t)
 		} else {
 			t := &Template{
-				Src:  path.Join(name, f.Name()),
+				Src:  path.Join(name, tmplDir, f.Name()),
 				Dest: path.Join(name, ansibleGroupDir, strings.TrimSuffix(f.Name(), tmplSuffix)),
 			}
 			tps = append(tps, t)
@@ -153,7 +154,9 @@ func checkPlaybook(name string) error {
 	var hasGroupVars, hasHostsGotmpl bool
 	d, err := os.Stat(path.Join(name, ansibleGroupDir))
 	if err != nil {
-		return err
+		if !os.IsNotExist(err) {
+			return err
+		}
 	} else if d.IsDir() {
 		hasGroupVars = true
 	}

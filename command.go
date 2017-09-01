@@ -3,7 +3,12 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"path"
 	"sort"
+
+	"gitee.com/wisecloud/wise-deploy/playbook"
+
+	"github.com/golang/glog"
 )
 
 const (
@@ -17,10 +22,13 @@ const (
 )
 
 type Commands struct {
-	supported []string
-	received  []string
-	stopChan  chan bool
-	nextChan  chan bool
+	supported    []string
+	received     []string
+	currentIndex int
+	currentCmd   *exec.Cmd
+	stopChan     chan bool
+	nextChan     chan bool
+	cmdChan      chan []string
 }
 
 func NewCommands() *Commands {
@@ -34,9 +42,67 @@ func NewCommands() *Commands {
 			k8sNode,
 			wiseCloud,
 		},
-		stopChan: make(chan bool),
-		nextChan: make(chan bool),
+		currentIndex: -1,
+		stopChan:     make(chan bool),
+		nextChan:     make(chan bool, 1),
+		cmdChan:      make(chan []string),
 	}
+}
+
+func (c *Commands) Launch(w string) {
+	for {
+		select {
+		case <-c.stopChan:
+			if err := c.currentCmd.Process.Kill(); err != nil {
+				glog.Errorf("stop install error: %v", err)
+			}
+		case next := <-c.nextChan:
+			if next {
+				c.currentIndex++
+				if c.currentIndex == len(c.supported) {
+					glog.V(3).Info("complete all install step")
+					c.currentIndex = -1
+					break
+				}
+				for ; c.currentIndex < len(c.supported); c.currentIndex++ {
+					step := c.supported[c.currentIndex]
+					index := sort.SearchStrings(c.received, step)
+					if index < len(c.received) && c.received[index] == step {
+						cmd := exec.Command("ansible-playbook", "install.ansible")
+						cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix)
+						c.currentCmd = cmd
+
+						go func() {
+							glog.V(3).Infof("start step %s", step)
+							err := cmd.Run()
+							if err != nil {
+								c.nextChan <- false
+							} else {
+								c.nextChan <- true
+							}
+						}()
+
+						break
+					}
+				}
+			} else {
+				glog.V(3).Info("failed at a step")
+				c.currentIndex = -1
+			}
+		case rec := <-c.cmdChan:
+			c.received = rec
+			sort.Strings(c.received)
+			c.nextChan <- true
+		}
+	}
+}
+
+func (c *Commands) Start(recv []string) {
+	c.cmdChan <- recv
+}
+
+func (c *Commands) Stop() {
+	c.stopChan <- true
 }
 
 func (c *Commands) Run(rec []string) error {

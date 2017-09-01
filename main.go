@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 
 	"gitee.com/wisecloud/wise-deploy/playbook"
 
@@ -24,12 +23,14 @@ var (
 		},
 	}
 	ansibleChan = make(chan map[string]interface{}, 15)
+	commands    = NewCommands()
 
 	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
 )
 
 func init() {
 	flag.Parse()
+	go commands.Launch(*workDir)
 }
 
 func main() {
@@ -111,15 +112,22 @@ func getConfig(c *gin.Context) {
 }
 
 func launch(c *gin.Context) {
-	cmd := exec.Command("./install.sh", "install")
-	err := cmd.Start()
-	if err != nil {
-		c.Error(err)
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{
+	config := &playbook.DeploySeed{}
+	if err := c.BindJSON(config); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
+
+	if err := playbook.PreparePlaybooks(*workDir, config); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	commands.Start(config.Step)
 
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"status": "started",
@@ -127,13 +135,7 @@ func launch(c *gin.Context) {
 }
 
 func stop(c *gin.Context) {
-	os.Setenv("ANSIBLE_CONFIG", "hehe")
-	o, _ := exec.Command("echo", os.Getenv("ANSIBLE_CONFIG")).CombinedOutput()
-	glog.Error(string(o))
-	os.Setenv("ANSIBLE_CONFIG", "haha")
-	o, _ = exec.Command("echo $HOME").Output()
-	glog.Error(string(o))
-	return
+	commands.Stop()
 }
 
 func notify(c *gin.Context) {
