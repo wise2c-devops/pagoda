@@ -20,14 +20,30 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
-[[constraint]]
+[[override]]
   name = "github.com/gin-gonic/gin"
   version = "v1.2"
 
-[[constraint]]
+[[override]]
   name = "github.com/gorilla/websocket"
   version = "v1.2.0"
 
-[[constraint]]
-  name = "github.com/HouzuoGuo/tiedot"
-  version = "3.4"
+[[override]]
+  name = "github.com/google/uuid"
+  version = "v1"
+
+[[override]]
+  name = "github.com/golang/glog"
+  branch = "master"
+
+[[override]]
+  name = "github.com/mattn/go-sqlite3"
+  version = "v1.2.0"
+
+[[override]]
+  name = "github.com/go-xorm/xorm"
+  branch = "master"
+
+[[override]]
+  name = "github.com/go-xorm/core"
+  branch = "master"

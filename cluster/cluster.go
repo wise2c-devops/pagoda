@@ -1,9 +1,9 @@
 package cluster
 
 type Cluster struct {
-	ID          string
-	Name        string
-	Description string
+	ID          string `xorm:"varchar(255) notnull pk 'id'"`
+	Name        string `xorm:"varchar(255) notnull 'name'"`
+	Description string `xorm:"varchar(255) 'description'"`
 	Hosts       []*Host
 	Components  []*Component
 }
