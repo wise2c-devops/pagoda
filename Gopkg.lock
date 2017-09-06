@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/HouzuoGuo/tiedot"
+  packages = ["data","db","dberr","gommap","tdlog"]
+  revision = "96fa90b5e4620f677d2737bc5358329040942adb"
+  version = "3.4"
+
+[[projects]]
   branch = "master"
   name = "github.com/gin-contrib/sse"
   packages = ["."]
@@ -64,6 +70,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0bd8e8ce4f412ad12dbaf3518f4ac56be99c6ff34be9d0552f39474c5c7ce145"
+  inputs-digest = "686c399189701b8276cbe453db9766ad59ebe8559fd6d71777453c51ed91fcb5"
   solver-name = "gps-cdcl"
   solver-version = 1
