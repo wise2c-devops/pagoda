@@ -37,7 +37,7 @@ package main
 
 /**
 *
-* @api {GET} /v1/clusters/:id clusters retrieve
+* @api {GET} /v1/clusters/:id cluster retrieve
 * @apiName retrieve clusters
 * @apiGroup v1
 * @apiVersion  1.0.0

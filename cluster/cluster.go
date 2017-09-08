@@ -1,16 +1,24 @@
 package cluster
 
+const (
+	Initial = "initial"
+	Ongoing = "ongoing"
+	Success = "success"
+	Failed  = "failed"
+)
+
 type Cluster struct {
 	ID          string       `xorm:"varchar(255) notnull pk 'id'"`
 	Name        string       `xorm:"varchar(255) notnull 'name'"`
 	Description string       `xorm:"varchar(255) 'description'"`
+	State       string       `xorm:"varchar(255) 'state'"`
 	Hosts       []*Host      `xorm:"-"`
-	Component   []*Component `xorm:"-"`
+	Components  []*Component `xorm:"-"`
 }
 
 type ClusterHost struct {
 	ClusterID string `xorm:"varchar(255) notnull 'id'"`
-	Host      *Host  `xorm:"json notnull"`
+	Host      *Host  `xorm:"json notnull 'host'"`
 }
 
 type Host struct {
@@ -22,7 +30,7 @@ type Host struct {
 
 type ClusterComponent struct {
 	ClusterID string     `xorm:"varchar(255) notnull 'id'"`
-	Component *Component `xorm:"json notnull"`
+	Component *Component `xorm:"json notnull 'component'"`
 }
 
 type Component struct {

@@ -30,7 +30,7 @@
 
 [[override]]
   name = "github.com/google/uuid"
-  version = "v1"
+  version = "0.2"
 
 [[override]]
   name = "github.com/golang/glog"

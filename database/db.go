@@ -39,6 +39,10 @@ func NewEngine(config *EngineConfig) (*SQLEngine, error) {
 		return nil, err
 	}
 
+	if err := e.xe.Sync2(new(cluster.ClusterComponent)); err != nil {
+		return nil, err
+	}
+
 	return e, nil
 }
 
@@ -48,6 +52,9 @@ func (e *SQLEngine) RetrieveClusters() (clusters []*cluster.Cluster, err error) 
 }
 
 func (e *SQLEngine) CreateCluster(c *cluster.Cluster) error {
+	c.ID = newUUID()
+	c.State = cluster.Initial
+
 	if _, err := e.xe.InsertOne(c); err != nil {
 		return err
 	}
@@ -66,8 +73,38 @@ func (e *SQLEngine) UpdateCluster(c *cluster.Cluster) error {
 }
 
 func (e *SQLEngine) RetrieveCluster(id string) (c *cluster.Cluster, err error) {
-	_, err = e.xe.Get(c)
+	_, err = e.xe.Id(id).Get(c)
 	return
+}
+
+func (e *SQLEngine) CreateComponent(clusterID string, cp *cluster.Component) error {
+	cc := &cluster.ClusterComponent{
+		ClusterID: clusterID,
+		Component: cp,
+	}
+
+	_, err := e.xe.InsertOne(cc)
+	return err
+}
+
+func (e *SQLEngine) DeleteComponent(clusterID string, name string) error {
+	_, err := e.xe.Exec("delete from cluster where id = ?", clusterID)
+	return err
+}
+
+func (e *SQLEngine) UpdateComponent(clusterID string, cp *cluster.Component) error {
+	ccp := &cluster.ClusterComponent{
+		ClusterID: clusterID,
+		Component: cp,
+	}
+	_, err := e.xe.Where("id = 'f4a27554-41c6-4a6b-bd30-e13c131756c1' and json_extract(component, '$.Name') = 'etcd'").Update(ccp)
+	return err
+}
+
+func (e *SQLEngine) RetrieveComponent(clusterID string, name string) (*cluster.Component, error) {
+	cc := &cluster.ClusterComponent{}
+	_, err := e.xe.Where("id = ? & component.$name = ?", clusterID, name).Get(cc)
+	return cc.Component, err
 }
 
 func main() {

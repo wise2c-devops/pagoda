@@ -45,6 +45,48 @@ func TestCluster(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		t.Log(cs)
+		for _, c := range cs {
+			t.Log(c)
+		}
+	}
+}
+
+func TestComponent(t *testing.T) {
+	config := &EngineConfig{
+		SQLType: "sqlite3",
+		ShowSQL: true,
+	}
+
+	e, err := NewEngine(config)
+	if err != nil {
+		t.Error(err)
+	}
+
+	c := &cluster.Component{
+		Name: "etcd",
+		Property: map[string]interface{}{
+			"caFile": "ca.crt",
+		},
+		Hosts: []string{
+			"aaa",
+			"bbb",
+		},
+	}
+	err = e.CreateComponent("f4a27554-41c6-4a6b-bd30-e13c131756c1", c)
+	if err != nil {
+		t.Error(err)
+	}
+
+	c.Property["caKey"] = "ca.key"
+	err = e.UpdateComponent("f4a27554-41c6-4a6b-bd30-e13c131756c1", c)
+	if err != nil {
+		t.Error(err)
+	}
+
+	c1, err := e.RetrieveComponent("f4a27554-41c6-4a6b-bd30-e13c131756c1", "etcd")
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log(c1)
 	}
 }
