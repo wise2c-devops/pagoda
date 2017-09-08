@@ -53,26 +53,37 @@ package main
     "state": "green",
     "hosts": [
       {
+        "id", "xxx",
         "hostname": "xxx",
         "ip": "xxx"
       }
     ],
-    "component": {
-      "etcd": {
+    "components": [
+      {
+        "name": "etcd",
         "hosts": [
-          "xxx"
-        ]
-      },
-      "loadbalancer": {
-        "hosts": [
+          "xxx",
           "xxx",
           "xxx"
         ],
-        "k8sVip": "xxx",
-        "esVip": "xxx",
-        "otherVip": "xxx"
+        "property": {
+          "a": "xxx",
+          "b": "xxx"
+        }
+      },
+      {
+        "name": "loadbalancer",
+        "hosts": [
+          "xxx",
+          "xxx",
+          "xxx"
+        ],
+        "property": {
+          "a": "xxx",
+          "b": "xxx"
+        }
       }
-    }
+    ]
   }
 *
 *
