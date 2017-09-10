@@ -17,7 +17,8 @@ type Cluster struct {
 }
 
 type ClusterHost struct {
-	ClusterID string `xorm:"varchar(255) notnull 'id'"`
+	ClusterID string `xorm:"varchar(255) notnull pk 'cluster_id'"`
+	HostID    string `xorm:"varchar(255) notnull pk 'host_id'"`
 	Host      *Host  `xorm:"json notnull 'host'"`
 }
 
@@ -29,8 +30,9 @@ type Host struct {
 }
 
 type ClusterComponent struct {
-	ClusterID string     `xorm:"varchar(255) notnull 'id'"`
-	Component *Component `xorm:"json notnull 'component'"`
+	ClusterID     string     `xorm:"varchar(255) notnull pk 'cluster_id'"`
+	ComponentName string     `xorm:"varchar(255) notnull pk 'component_id'"`
+	Component     *Component `xorm:"json notnull 'component'"`
 }
 
 type Component struct {

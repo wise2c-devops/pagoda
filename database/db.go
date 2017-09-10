@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-xorm/xorm"
 	"github.com/golang/glog"
+	//just init
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -79,8 +80,9 @@ func (e *SQLEngine) RetrieveCluster(id string) (c *cluster.Cluster, err error) {
 
 func (e *SQLEngine) CreateComponent(clusterID string, cp *cluster.Component) error {
 	cc := &cluster.ClusterComponent{
-		ClusterID: clusterID,
-		Component: cp,
+		ClusterID:     clusterID,
+		ComponentName: cp.Name,
+		Component:     cp,
 	}
 
 	_, err := e.xe.InsertOne(cc)
@@ -88,23 +90,77 @@ func (e *SQLEngine) CreateComponent(clusterID string, cp *cluster.Component) err
 }
 
 func (e *SQLEngine) DeleteComponent(clusterID string, name string) error {
-	_, err := e.xe.Exec("delete from cluster where id = ?", clusterID)
+	_, err := e.xe.Exec(
+		"delete from cluster_component where cluster_id = ? and component_name = ?",
+		clusterID,
+		name,
+	)
 	return err
 }
 
 func (e *SQLEngine) UpdateComponent(clusterID string, cp *cluster.Component) error {
 	ccp := &cluster.ClusterComponent{
-		ClusterID: clusterID,
-		Component: cp,
+		ClusterID:     clusterID,
+		ComponentName: cp.Name,
+		Component:     cp,
 	}
-	_, err := e.xe.Where("id = 'f4a27554-41c6-4a6b-bd30-e13c131756c1' and json_extract(component, '$.Name') = 'etcd'").Update(ccp)
+	_, err := e.xe.Update(ccp)
 	return err
 }
 
-func (e *SQLEngine) RetrieveComponent(clusterID string, name string) (*cluster.Component, error) {
-	cc := &cluster.ClusterComponent{}
-	_, err := e.xe.Where("id = ? & component.$name = ?", clusterID, name).Get(cc)
+func (e *SQLEngine) RetrieveComponent(
+	clusterID string,
+	name string,
+) (*cluster.Component, error) {
+	cc := &cluster.ClusterComponent{
+		ClusterID:     clusterID,
+		ComponentName: name,
+	}
+	_, err := e.xe.Get(cc)
 	return cc.Component, err
+}
+
+func (e *SQLEngine) CreateHost(clusterID string, h *cluster.Host) error {
+	h.ID = newUUID()
+	ch := &cluster.ClusterHost{
+		ClusterID: clusterID,
+		HostID:    h.ID,
+		Host:      h,
+	}
+
+	_, err := e.xe.InsertOne(ch)
+	return err
+}
+
+func (e *SQLEngine) DeleteHost(clusterID string, hostID string) error {
+	_, err := e.xe.Exec(
+		"delete from cluster_host where cluster_id = ? and host_id = ?",
+		clusterID,
+		hostID,
+	)
+	return err
+}
+
+func (e *SQLEngine) UpdateHost(clusterID string, h *cluster.Host) error {
+	ch := &cluster.ClusterHost{
+		ClusterID: clusterID,
+		HostID:    h.ID,
+		Host:      h,
+	}
+	_, err := e.xe.Update(ch)
+	return err
+}
+
+func (e *SQLEngine) RetrieveHost(
+	clusterID string,
+	hostID string,
+) (*cluster.Host, error) {
+	ch := &cluster.ClusterHost{
+		ClusterID: clusterID,
+		HostID:    hostID,
+	}
+	_, err := e.xe.Get(ch)
+	return ch.Host, err
 }
 
 func main() {

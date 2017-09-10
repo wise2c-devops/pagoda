@@ -41,6 +41,24 @@ func main() {
 
 	v1 := r.Group("/v1")
 	{
+		v1.GET("/clusters", retrieveClusters)
+		v1.POST("/clusters", createCluster)
+		v1.DELETE("/clusters/:cluster_id", deleteCluster)
+		v1.PUT("/clusters/:cluster_id", updateCluster)
+		v1.GET("/clusters/:cluster_id", retrieveCluster)
+
+		v1.GET("/clusters/:cluster_id/hosts", retrieveHosts)
+		v1.POST("/clusters/:cluster_id/hosts", createHost)
+		v1.DELETE("/clusters/:cluster_id/hosts/:host_id", deleteHost)
+		v1.PUT("/clusters/:cluster_id/hosts/:host_id", updateHost)
+		v1.GET("/clusters/:cluster_id/hosts/:host_id", retrieveHost)
+
+		v1.GET("/clusters/:cluster_id/components", retrieveComponents)
+		v1.POST("/clusters/:cluster_id/components", createComponent)
+		v1.DELETE("/clusters/:cluster_id/components/:component_name", deleteComponent)
+		v1.PUT("/clusters/:cluster_id/components/:component_name", updateComponent)
+		v1.GET("/clusters/:cluster_id/components/:component_name", retrieveComponent)
+
 		v1.PUT("/config", setConfig)
 		v1.GET("/config", getConfig)
 		v1.PUT("/install", install)
