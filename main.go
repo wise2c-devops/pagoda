@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"gitee.com/wisecloud/wise-deploy/database"
 	"gitee.com/wisecloud/wise-deploy/playbook"
 
 	"gopkg.in/yaml.v2"
@@ -26,6 +27,12 @@ var (
 	commands    = NewCommands()
 
 	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
+
+	sqlConfig = &database.EngineConfig{
+		SQLType:      "sqlite3",
+		ShowSQL:      true,
+		ShowExecTime: true,
+	}
 )
 
 func init() {

@@ -31,7 +31,7 @@ type Host struct {
 
 type ClusterComponent struct {
 	ClusterID     string     `xorm:"varchar(255) notnull pk 'cluster_id'"`
-	ComponentName string     `xorm:"varchar(255) notnull pk 'component_id'"`
+	ComponentName string     `xorm:"varchar(255) notnull pk 'component_name'"`
 	Component     *Component `xorm:"json notnull 'component'"`
 }
 

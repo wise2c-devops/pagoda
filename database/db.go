@@ -1,10 +1,7 @@
 package database
 
 import (
-	"flag"
 	"fmt"
-	"strconv"
-	"time"
 
 	"gitee.com/wisecloud/wise-deploy/cluster"
 
@@ -24,6 +21,24 @@ type EngineConfig struct {
 	ShowExecTime bool
 }
 
+var (
+	i *SQLEngine
+)
+
+func Instance(config *EngineConfig) *SQLEngine {
+	if i == nil {
+		var err error
+		i, err = NewEngine(config)
+		if err != nil {
+			panic(fmt.Sprintf("get sql engine instance error %v", err))
+		}
+
+		glog.V(3).Info("create sql engine instance")
+	}
+
+	return i
+}
+
 func NewEngine(config *EngineConfig) (*SQLEngine, error) {
 	e := &SQLEngine{}
 	if config.SQLType == "sqlite3" {
@@ -41,6 +56,10 @@ func NewEngine(config *EngineConfig) (*SQLEngine, error) {
 	}
 
 	if err := e.xe.Sync2(new(cluster.ClusterComponent)); err != nil {
+		return nil, err
+	}
+
+	if err := e.xe.Sync2(new(cluster.ClusterHost)); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +93,40 @@ func (e *SQLEngine) UpdateCluster(c *cluster.Cluster) error {
 }
 
 func (e *SQLEngine) RetrieveCluster(id string) (c *cluster.Cluster, err error) {
-	_, err = e.xe.Id(id).Get(c)
+	c = &cluster.Cluster{}
+	_, err = e.xe.ID(id).Get(c)
+	if err != nil {
+		glog.V(3).Info(err)
+		return
+	}
+
+	cs, err := e.RetrieveComponents(id)
+	if err != nil {
+		glog.V(3).Info(err)
+		return
+	}
+	c.Components = make([]*cluster.Component, 0, len(cs))
+	for _, cc := range cs {
+		c.Components = append(c.Components, cc.Component)
+	}
+
+	hs, err := e.RetrieveHosts(id)
+	if err != nil {
+		glog.V(3).Info(err)
+		return
+	}
+	c.Hosts = make([]*cluster.Host, 0, len(hs))
+	for _, ch := range hs {
+		c.Hosts = append(c.Hosts, ch.Host)
+	}
+
+	return
+}
+
+func (e *SQLEngine) RetrieveComponents(
+	clusterID string,
+) (ccs []*cluster.ClusterComponent, err error) {
+	err = e.xe.Find(&ccs)
 	return
 }
 
@@ -120,6 +172,13 @@ func (e *SQLEngine) RetrieveComponent(
 	return cc.Component, err
 }
 
+func (e *SQLEngine) RetrieveHosts(
+	clusterID string,
+) (chs []*cluster.ClusterHost, err error) {
+	err = e.xe.Find(&chs)
+	return
+}
+
 func (e *SQLEngine) CreateHost(clusterID string, h *cluster.Host) error {
 	h.ID = newUUID()
 	ch := &cluster.ClusterHost{
@@ -161,98 +220,4 @@ func (e *SQLEngine) RetrieveHost(
 	}
 	_, err := e.xe.Get(ch)
 	return ch.Host, err
-}
-
-func main() {
-	flag.Parse()
-
-	var err error
-	engine, err := xorm.NewEngine("sqlite3", "cluster.db")
-	if err != nil {
-		glog.Exit(err)
-	}
-	if v := flag.Lookup("v"); v != nil {
-		i, _ := strconv.Atoi(v.Value.String())
-		if i >= 3 {
-			engine.ShowSQL(true)
-		}
-	}
-
-	cacher := xorm.NewLRUCacher(xorm.NewMemoryStore(), 1000)
-	engine.SetDefaultCacher(cacher)
-
-	err = engine.CreateTables(&cluster.Cluster{})
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	id := time.Now().Format("2006-01-02 15:04:05")
-	_, err = engine.Insert(&cluster.Cluster{ID: id, Name: "xlw", Description: "gun"})
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	var users []cluster.Cluster
-	err = engine.Find(&users)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("users:", users)
-
-	var users2 []cluster.Cluster
-	err = engine.Find(&users2)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("users2:", users2)
-
-	var users3 []cluster.Cluster
-	err = engine.Find(&users3)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("users3:", users3)
-
-	user4 := new(cluster.Cluster)
-	has, err := engine.Id("xxx").Get(user4)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("user4:", has, user4)
-
-	user4.Name = "xiaolunwen"
-	_, err = engine.Id("xxx").Update(user4)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("user4:", user4)
-
-	user5 := new(cluster.Cluster)
-	has, err = engine.Id("xxx").Get(user5)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("user5:", has, user5)
-
-	user7 := new(cluster.Cluster)
-	user7.Name = "d"
-	user7.Description = ""
-	user7.ID = "xxx"
-	_, err = engine.Id("xxx").Delete(user7)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 }
