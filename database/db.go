@@ -66,9 +66,10 @@ func NewEngine(config *EngineConfig) (*SQLEngine, error) {
 	return e, nil
 }
 
-func (e *SQLEngine) RetrieveClusters() (clusters []*cluster.Cluster, err error) {
-	err = e.xe.Find(&clusters)
-	return
+func (e *SQLEngine) RetrieveClusters() ([]*cluster.Cluster, error) {
+	clusters := make([]*cluster.Cluster, 0)
+	err := e.xe.Find(&clusters)
+	return clusters, err
 }
 
 func (e *SQLEngine) CreateCluster(c *cluster.Cluster) error {
@@ -88,8 +89,16 @@ func (e *SQLEngine) DeleteCluster(id string) error {
 }
 
 func (e *SQLEngine) UpdateCluster(c *cluster.Cluster) error {
-	_, err := e.xe.Update(c)
-	return err
+	i, err := e.xe.Id(c.ID).Update(c)
+	if err != nil {
+		return err
+	}
+
+	if i == 0 {
+		return fmt.Errorf("can't find cluster %s", c.ID)
+	}
+
+	return nil
 }
 
 func (e *SQLEngine) RetrieveCluster(id string) (c *cluster.Cluster, err error) {
@@ -105,28 +114,30 @@ func (e *SQLEngine) RetrieveCluster(id string) (c *cluster.Cluster, err error) {
 		glog.V(3).Info(err)
 		return
 	}
-	c.Components = make([]*cluster.Component, 0, len(cs))
-	for _, cc := range cs {
-		c.Components = append(c.Components, cc.Component)
-	}
+	c.Components = cs
 
 	hs, err := e.RetrieveHosts(id)
 	if err != nil {
 		glog.V(3).Info(err)
 		return
 	}
-	c.Hosts = make([]*cluster.Host, 0, len(hs))
-	for _, ch := range hs {
-		c.Hosts = append(c.Hosts, ch.Host)
-	}
+	c.Hosts = hs
 
 	return
 }
 
 func (e *SQLEngine) RetrieveComponents(
 	clusterID string,
-) (ccs []*cluster.ClusterComponent, err error) {
-	err = e.xe.Find(&ccs)
+) (cs []*cluster.Component, err error) {
+	ccs := make([]*cluster.ClusterComponent, 0)
+	if err = e.xe.Find(&ccs); err != nil {
+		return
+	}
+
+	cs = make([]*cluster.Component, 0, len(ccs))
+	for _, cc := range ccs {
+		cs = append(cs, cc.Component)
+	}
 	return
 }
 
@@ -174,8 +185,16 @@ func (e *SQLEngine) RetrieveComponent(
 
 func (e *SQLEngine) RetrieveHosts(
 	clusterID string,
-) (chs []*cluster.ClusterHost, err error) {
-	err = e.xe.Find(&chs)
+) (hs []*cluster.Host, err error) {
+	chs := make([]*cluster.ClusterHost, 0)
+	if err = e.xe.Find(&chs); err != nil {
+		return
+	}
+
+	hs = make([]*cluster.Host, 0, len(hs))
+	for _, ch := range chs {
+		hs = append(hs, ch.Host)
+	}
 	return
 }
 
