@@ -45,7 +45,10 @@ func main() {
 	defer glog.Flush()
 
 	r := gin.Default()
-	r.Use(cors.Default())
+	config := cors.DefaultConfig()
+	config.AllowMethods = append(config.AllowMethods, "DELETE")
+	config.AllowAllOrigins = true
+	r.Use(cors.New(config))
 	r.StaticFile("/favicon.ico", "favicon.ico")
 
 	v1 := r.Group("/v1")
