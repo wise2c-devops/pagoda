@@ -38,7 +38,7 @@ package main
 /**
 *
 * @api {GET} /v1/clusters/:id cluster retrieve
-* @apiName retrieve clusters
+* @apiName retrieve cluster
 * @apiGroup v1
 * @apiVersion  1.0.0
 *
@@ -261,6 +261,7 @@ package main
 * @apiSuccessExample {type} Success-Response:
   HTTP/1.1 200 OK
   {
+    "id": "xxx",
     "hostname": "xxx",
     "ip": "xxx"
   }
@@ -311,8 +312,33 @@ package main
 
 /**
 *
-* @api {PUT} /v1/clusters/:cluster/components/:component component set
-* @apiName set component
+* @api {POST} /v1/clusters/:cluster/components/:component component create
+* @apiName create component
+* @apiGroup v1
+* @apiVersion  1.0.0
+*
+* @apiParamExample  {type} Request-Example:
+  http://172.20.20.1:8080/v1/clusters/1/components/loadbalancer
+  "loadbalancer": {
+    "hosts": [
+      "xxx",
+      "xxx"
+    ]
+    "k8sVip": "xxx",
+    "esVip": "xxx",
+    "otherVip": "xxx"
+  }
+*
+*
+* @apiSuccessExample {type} Success-Response:
+  HTTP/1.1 200 OK
+*
+*/
+
+/**
+*
+* @api {PUT} /v1/clusters/:cluster/components/:component component update
+* @apiName update component
 * @apiGroup v1
 * @apiVersion  1.0.0
 *
