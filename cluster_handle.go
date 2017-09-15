@@ -52,10 +52,18 @@ func deleteCluster(c *gin.Context) {
 }
 
 func updateCluster(c *gin.Context) {
+	clusterID := c.Param("cluster_id")
 	cluster := &cluster.Cluster{}
 	if err := c.BindJSON(cluster); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
+		})
+		return
+	}
+
+	if clusterID != cluster.ID {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"error": "two cluster id must be equal",
 		})
 		return
 	}

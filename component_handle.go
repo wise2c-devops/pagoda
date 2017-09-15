@@ -30,6 +30,7 @@ func createComponent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
+		return
 	}
 
 	err := database.Instance(sqlConfig).CreateComponent(clusterID, cp)
@@ -38,7 +39,7 @@ func createComponent(c *gin.Context) {
 			"error": err.Error(),
 		})
 	} else {
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, cp)
 	}
 }
 
@@ -58,12 +59,21 @@ func deleteComponent(c *gin.Context) {
 
 func updateComponent(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
+	componentName := c.Param("component_name")
 
 	cp := &cluster.Component{}
 	if err := c.BindJSON(cp); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
+		return
+	}
+
+	if componentName != cp.Name {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "two component name must be equal",
+		})
+		return
 	}
 
 	err := database.Instance(sqlConfig).UpdateComponent(clusterID, cp)
@@ -72,7 +82,7 @@ func updateComponent(c *gin.Context) {
 			"error": err.Error(),
 		})
 	} else {
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, cp)
 	}
 }
 

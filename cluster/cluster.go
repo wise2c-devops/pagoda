@@ -1,32 +1,34 @@
 package cluster
 
 const (
-	Initial = "initial"
-	Ongoing = "ongoing"
-	Success = "success"
-	Failed  = "failed"
+	Initial    = "initial"
+	Processing = "processing"
+	Success    = "success"
+	Failed     = "failed"
 )
 
 type Cluster struct {
-	ID          string       `xorm:"varchar(255) notnull pk 'id'"`
-	Name        string       `xorm:"varchar(255) notnull 'name'"`
-	Description string       `xorm:"varchar(255) 'description'"`
-	State       string       `xorm:"varchar(255) 'state'"`
-	Hosts       []*Host      `xorm:"-"`
-	Components  []*Component `xorm:"-"`
+	ID          string       `xorm:"varchar(255) notnull pk 'id'" json:"id"`
+	Name        string       `xorm:"varchar(255) notnull unique 'name'" json:"name"`
+	Description string       `xorm:"varchar(255) 'description'" json:"description"`
+	State       string       `xorm:"varchar(255) 'state'" json:"state"`
+	Hosts       []*Host      `xorm:"-" json:"hosts,omitempty"`
+	Components  []*Component `xorm:"-" json:"components,omitempty"`
 }
 
 type ClusterHost struct {
 	ClusterID string `xorm:"varchar(255) notnull pk 'cluster_id'"`
 	HostID    string `xorm:"varchar(255) notnull pk 'host_id'"`
+	IP        string `xorm:"varchar(25) notnull unique 'ip'"`
+	Hostname  string `xorm:"varchar(255) notnull unique 'hostname'"`
 	Host      *Host  `xorm:"json notnull 'host'"`
 }
 
 type Host struct {
-	ID          string
-	HostName    string
-	IP          string
-	Description string
+	ID          string `json:"id"`
+	HostName    string `json:"hostname"`
+	IP          string `json:"ip"`
+	Description string `json:"description"`
 }
 
 type ClusterComponent struct {
@@ -36,7 +38,7 @@ type ClusterComponent struct {
 }
 
 type Component struct {
-	Name     string
-	Property map[string]interface{}
-	Hosts    []string
+	Name     string                 `json:"name"`
+	Property map[string]interface{} `json:"property"`
+	Hosts    []string               `json:"hosts"`
 }

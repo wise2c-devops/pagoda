@@ -58,12 +58,21 @@ func deleteHost(c *gin.Context) {
 
 func updateHost(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
+	hostID := c.Param("host_id")
 
 	h := &cluster.Host{}
 	if err := c.BindJSON(h); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
+		return
+	}
+
+	if h.ID != hostID {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "two host id must be equal",
+		})
+		return
 	}
 
 	err := database.Instance(sqlConfig).UpdateHost(clusterID, h)
@@ -72,7 +81,7 @@ func updateHost(c *gin.Context) {
 			"error": err.Error(),
 		})
 	} else {
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, h)
 	}
 }
 
