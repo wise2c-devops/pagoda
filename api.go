@@ -319,7 +319,8 @@ package main
 *
 * @apiParamExample  {type} Request-Example:
   http://172.20.20.1:8080/v1/clusters/1/components/loadbalancer
-  "loadbalancer": {
+  {
+    "name": "loadbalancer",
     "hosts": [
       "xxx",
       "xxx"
@@ -344,7 +345,8 @@ package main
 *
 * @apiParamExample  {type} Request-Example:
   http://172.20.20.1:8080/v1/clusters/1/components/loadbalancer
-  "loadbalancer": {
+  {
+    "name": "loadbalancer",
     "hosts": [
       "xxx",
       "xxx"
