@@ -9,8 +9,65 @@ import (
 	"strings"
 	"text/template"
 
+	"gitee.com/wisecloud/wise-deploy/cluster"
+
 	"github.com/golang/glog"
 )
+
+type DeploySeed2 struct {
+	registry     *Component
+	etcd         *Component
+	mySQL        *Component
+	loadBalancer *Component
+	k8sMaster    *Component
+	k8sNode      *Component
+	wiseCloud    *Component
+}
+
+type Component struct {
+	Property map[string]interface{}
+	Hosts    []*cluster.Host
+}
+
+func newDeploySeed(c *cluster.Cluster) *DeploySeed2 {
+	hs := make(map[string]*cluster.Host)
+	for _, h := range c.Hosts {
+		hs[h.ID] = h
+	}
+
+	ds := &DeploySeed2{
+		registry:     &Component{},
+		etcd:         &Component{},
+		mySQL:        &Component{},
+		loadBalancer: &Component{},
+		k8sMaster:    &Component{},
+		k8sNode:      &Component{},
+		wiseCloud:    &Component{},
+	}
+
+	// for _, cp := range c.Components {
+	// 	switch cp.Name {
+	// 	case "etcd":
+	// 	}
+	// }
+
+	return ds
+}
+
+func setComponentHost(
+	hs map[string]*cluster.Host,
+	sourceCp *cluster.Component,
+	destCp *Component,
+) {
+	destCp.Property = sourceCp.Property
+	for _, h := range sourceCp.Hosts {
+		th, ok := hs[h]
+		if !ok {
+			panic(fmt.Errorf("unexpected host: %s", h))
+		}
+		destCp.Hosts = append(destCp.Hosts, th)
+	}
+}
 
 type K8sNode struct {
 	Wise2cController []string `yaml:"wise2cController"`

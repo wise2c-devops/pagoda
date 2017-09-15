@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 
 	"gitee.com/wisecloud/wise-deploy/cluster"
@@ -74,18 +75,29 @@ func (e *SQLEngine) CreateCluster(c *cluster.Cluster) error {
 
 func (e *SQLEngine) DeleteCluster(id string) error {
 	var err error
-	write := func(statement string, id string) {
+	write := func(statement string, id string) sql.Result {
 		if err != nil {
-			return
+			return nil
 		}
-		_, err = e.xe.Exec(statement, id)
+		var rs sql.Result
+		rs, err = e.xe.Exec(statement, id)
+		return rs
 	}
 
 	write("delete from cluster_component where cluster_id = ?", id)
 	write("delete from cluster_host where cluster_id = ?", id)
-	write("delete from cluster where id = ?", id)
+	rs := write("delete from cluster where id = ?", id)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	if i, err := rs.RowsAffected(); i == 0 || err != nil {
+		glog.V(3).Info(err)
+		return fmt.Errorf("can't find cluster %s", id)
+	}
+
+	return nil
 }
 
 func (e *SQLEngine) UpdateCluster(c *cluster.Cluster) error {

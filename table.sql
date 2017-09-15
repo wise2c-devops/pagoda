@@ -1,11 +1,13 @@
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS `cluster` (
-    `id` TEXT PRIMARY KEY NOT NULL,
+    `id` TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
     `name` TEXT NOT NULL, 
     `description` TEXT NULL, 
     `state` TEXT NULL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS `UQE_cluster_name` ON `cluster` (`name`);
 
 CREATE TABLE IF NOT EXISTS `cluster_component` (
     `cluster_id` TEXT NOT NULL, 
@@ -25,6 +27,6 @@ CREATE TABLE IF NOT EXISTS `cluster_host` (
     FOREIGN KEY(cluster_id) REFERENCES cluster(id)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS `UQE_cluster_host_ip` ON `cluster_host` (`ip`);
+CREATE UNIQUE INDEX IF NOT EXISTS `UQE_cluster_host_ip` ON `cluster_host` (`cluster_id`, `ip`);
 
-CREATE UNIQUE INDEX IF NOT EXISTS `UQE_cluster_host_hostname` ON `cluster_host` (`hostname`);
+CREATE UNIQUE INDEX IF NOT EXISTS `UQE_cluster_host_hostname` ON `cluster_host` (`cluster_id`, `hostname`);

@@ -391,6 +391,7 @@ package main
 * @apiSuccessExample {type} Success-Response:
   HTTP/1.1 200 OK
   {
+    "name": "loadbalancer",
     "hosts": [
       "xxx",
       "xxx"
