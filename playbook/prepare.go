@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	"gitee.com/wisecloud/wise-deploy/cluster"
+	"gitee.com/wisecloud/wise-deploy/database"
 
 	"github.com/golang/glog"
 )
@@ -26,11 +26,11 @@ type DeploySeed2 struct {
 
 type Component struct {
 	Property map[string]interface{}
-	Hosts    []*cluster.Host
+	Hosts    []*database.Host
 }
 
-func newDeploySeed(c *cluster.Cluster) *DeploySeed2 {
-	hs := make(map[string]*cluster.Host)
+func newDeploySeed(c *database.Cluster) *DeploySeed2 {
+	hs := make(map[string]*database.Host)
 	for _, h := range c.Hosts {
 		hs[h.ID] = h
 	}
@@ -55,8 +55,8 @@ func newDeploySeed(c *cluster.Cluster) *DeploySeed2 {
 }
 
 func setComponentHost(
-	hs map[string]*cluster.Host,
-	sourceCp *cluster.Component,
+	hs map[string]*database.Host,
+	sourceCp *database.Component,
 	destCp *Component,
 ) {
 	destCp.Property = sourceCp.Property

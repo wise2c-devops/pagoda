@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"gitee.com/wisecloud/wise-deploy/cluster"
 	"gitee.com/wisecloud/wise-deploy/database"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +20,7 @@ func retrieveClusters(c *gin.Context) {
 }
 
 func createCluster(c *gin.Context) {
-	cluster := &cluster.Cluster{}
+	cluster := &database.Cluster{}
 	if err := c.BindJSON(cluster); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -53,7 +52,7 @@ func deleteCluster(c *gin.Context) {
 
 func updateCluster(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
-	cluster := &cluster.Cluster{}
+	cluster := &database.Cluster{}
 	if err := c.BindJSON(cluster); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),

@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"gitee.com/wisecloud/wise-deploy/cluster"
 	"gitee.com/wisecloud/wise-deploy/database"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +24,7 @@ func retrieveHosts(c *gin.Context) {
 func createHost(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 
-	h := &cluster.Host{}
+	h := &database.Host{}
 	if err := c.BindJSON(h); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -60,7 +59,7 @@ func updateHost(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 	hostID := c.Param("host_id")
 
-	h := &cluster.Host{}
+	h := &database.Host{}
 	if err := c.BindJSON(h); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),

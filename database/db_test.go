@@ -62,7 +62,7 @@ func TestComponent(t *testing.T) {
 		t.Error(err)
 	}
 
-	c := &cluster.Component{
+	c := &Component{
 		Name: "etcd",
 		Property: map[string]interface{}{
 			"caFile": "ca.crt",

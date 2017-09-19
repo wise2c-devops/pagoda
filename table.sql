@@ -11,11 +11,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS `UQE_cluster_name` ON `cluster` (`name`);
 
 CREATE TABLE IF NOT EXISTS `cluster_component` (
     `cluster_id` TEXT NOT NULL, 
+    `component_id` TEXT NOT NULL, 
     `component_name` TEXT NOT NULL, 
     `component` TEXT NOT NULL, 
     PRIMARY KEY ( `cluster_id`,`component_name` ),
     FOREIGN KEY(cluster_id) REFERENCES cluster(id)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS `UQE_cluster_component_name` ON `cluster_component` (`cluster_id`, `component_name`);
 
 CREATE TABLE IF NOT EXISTS `cluster_host` (
     `cluster_id` TEXT NOT NULL, 

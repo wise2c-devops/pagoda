@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"gitee.com/wisecloud/wise-deploy/cluster"
-
 	"github.com/go-xorm/xorm"
 	"github.com/golang/glog"
 	//just init
@@ -56,15 +54,15 @@ func NewEngine(config *EngineConfig) (*SQLEngine, error) {
 	return e, err
 }
 
-func (e *SQLEngine) RetrieveClusters() ([]*cluster.Cluster, error) {
-	clusters := make([]*cluster.Cluster, 0)
+func (e *SQLEngine) RetrieveClusters() ([]*Cluster, error) {
+	clusters := make([]*Cluster, 0)
 	err := e.xe.Find(&clusters)
 	return clusters, err
 }
 
-func (e *SQLEngine) CreateCluster(c *cluster.Cluster) error {
+func (e *SQLEngine) CreateCluster(c *Cluster) error {
 	c.ID = newUUID()
-	c.State = cluster.Initial
+	c.State = Initial
 
 	if _, err := e.xe.InsertOne(c); err != nil {
 		return err
@@ -100,7 +98,7 @@ func (e *SQLEngine) DeleteCluster(id string) error {
 	return nil
 }
 
-func (e *SQLEngine) UpdateCluster(c *cluster.Cluster) error {
+func (e *SQLEngine) UpdateCluster(c *Cluster) error {
 	i, err := e.xe.Id(c.ID).Update(c)
 	if err != nil {
 		return err
@@ -113,8 +111,8 @@ func (e *SQLEngine) UpdateCluster(c *cluster.Cluster) error {
 	return nil
 }
 
-func (e *SQLEngine) RetrieveCluster(id string) (c *cluster.Cluster, err error) {
-	c = &cluster.Cluster{}
+func (e *SQLEngine) RetrieveCluster(id string) (c *Cluster, err error) {
+	c = &Cluster{}
 	has, err := e.xe.ID(id).Get(c)
 
 	if err != nil {
@@ -146,22 +144,24 @@ func (e *SQLEngine) RetrieveCluster(id string) (c *cluster.Cluster, err error) {
 
 func (e *SQLEngine) RetrieveComponents(
 	clusterID string,
-) (cs []*cluster.Component, err error) {
-	ccs := make([]*cluster.ClusterComponent, 0)
+) (cs []*Component, err error) {
+	ccs := make([]*ClusterComponent, 0)
 	if err = e.xe.Where("cluster_id = ?", clusterID).Find(&ccs); err != nil {
 		return
 	}
 
-	cs = make([]*cluster.Component, 0, len(ccs))
+	cs = make([]*Component, 0, len(ccs))
 	for _, cc := range ccs {
 		cs = append(cs, cc.Component)
 	}
 	return
 }
 
-func (e *SQLEngine) CreateComponent(clusterID string, cp *cluster.Component) error {
-	cc := &cluster.ClusterComponent{
+func (e *SQLEngine) CreateComponent(clusterID string, cp *Component) error {
+	cp.ID = newUUID()
+	cc := &ClusterComponent{
 		ClusterID:     clusterID,
+		ComponentID:   cp.ID,
 		ComponentName: cp.Name,
 		Component:     cp,
 	}
@@ -179,9 +179,10 @@ func (e *SQLEngine) DeleteComponent(clusterID string, name string) error {
 	return err
 }
 
-func (e *SQLEngine) UpdateComponent(clusterID string, cp *cluster.Component) error {
-	ccp := &cluster.ClusterComponent{
+func (e *SQLEngine) UpdateComponent(clusterID string, cp *Component) error {
+	ccp := &ClusterComponent{
 		ClusterID:     clusterID,
+		ComponentID:   cp.ID,
 		ComponentName: cp.Name,
 		Component:     cp,
 	}
@@ -204,11 +205,11 @@ func (e *SQLEngine) UpdateComponent(clusterID string, cp *cluster.Component) err
 
 func (e *SQLEngine) RetrieveComponent(
 	clusterID string,
-	name string,
-) (*cluster.Component, error) {
-	cc := &cluster.ClusterComponent{
-		ClusterID:     clusterID,
-		ComponentName: name,
+	id string,
+) (*Component, error) {
+	cc := &ClusterComponent{
+		ClusterID:   clusterID,
+		ComponentID: id,
 	}
 	_, err := e.xe.Get(cc)
 	return cc.Component, err
@@ -216,22 +217,22 @@ func (e *SQLEngine) RetrieveComponent(
 
 func (e *SQLEngine) RetrieveHosts(
 	clusterID string,
-) (hs []*cluster.Host, err error) {
-	chs := make([]*cluster.ClusterHost, 0)
+) (hs []*Host, err error) {
+	chs := make([]*ClusterHost, 0)
 	if err = e.xe.Where("cluster_Id = ?", clusterID).Find(&chs); err != nil {
 		return
 	}
 
-	hs = make([]*cluster.Host, 0, len(hs))
+	hs = make([]*Host, 0, len(hs))
 	for _, ch := range chs {
 		hs = append(hs, ch.Host)
 	}
 	return
 }
 
-func (e *SQLEngine) CreateHost(clusterID string, h *cluster.Host) error {
+func (e *SQLEngine) CreateHost(clusterID string, h *Host) error {
 	h.ID = newUUID()
-	ch := &cluster.ClusterHost{
+	ch := &ClusterHost{
 		ClusterID: clusterID,
 		HostID:    h.ID,
 		IP:        h.IP,
@@ -252,8 +253,8 @@ func (e *SQLEngine) DeleteHost(clusterID string, hostID string) error {
 	return err
 }
 
-func (e *SQLEngine) UpdateHost(clusterID string, h *cluster.Host) error {
-	ch := &cluster.ClusterHost{
+func (e *SQLEngine) UpdateHost(clusterID string, h *Host) error {
+	ch := &ClusterHost{
 		ClusterID: clusterID,
 		HostID:    h.ID,
 		IP:        h.IP,
@@ -280,8 +281,8 @@ func (e *SQLEngine) UpdateHost(clusterID string, h *cluster.Host) error {
 func (e *SQLEngine) RetrieveHost(
 	clusterID string,
 	hostID string,
-) (*cluster.Host, error) {
-	ch := &cluster.ClusterHost{
+) (*Host, error) {
+	ch := &ClusterHost{
 		ClusterID: clusterID,
 		HostID:    hostID,
 	}
