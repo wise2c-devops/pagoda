@@ -45,11 +45,24 @@ func newDeploySeed(c *database.Cluster) *DeploySeed2 {
 		wiseCloud:    &Component{},
 	}
 
-	// for _, cp := range c.Components {
-	// 	switch cp.Name {
-	// 	case "etcd":
-	// 	}
-	// }
+	for _, cp := range c.Components {
+		switch cp.Name {
+		case "etcd":
+			setComponentHost(hs, cp, ds.etcd)
+		case "registry":
+			setComponentHost(hs, cp, ds.registry)
+		case "mysql":
+			setComponentHost(hs, cp, ds.mySQL)
+		case "loadbalancer":
+			setComponentHost(hs, cp, ds.loadBalancer)
+		case "k8smaster":
+			setComponentHost(hs, cp, ds.k8sMaster)
+		case "k8snode":
+			setComponentHost(hs, cp, ds.k8sNode)
+		case "wisecloud":
+			setComponentHost(hs, cp, ds.wiseCloud)
+		}
+	}
 
 	return ds
 }

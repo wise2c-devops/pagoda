@@ -100,9 +100,9 @@ func updateComponent(c *gin.Context) {
 
 func retrieveComponent(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
-	componentName := c.Param("component_id")
+	componentID := c.Param("component_id")
 
-	cp, err := database.Instance(sqlConfig).RetrieveComponent(clusterID, componentName)
+	cp, err := database.Instance(sqlConfig).RetrieveComponent(clusterID, componentID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

@@ -3,10 +3,10 @@ package main
 import "gitee.com/wisecloud/wise-deploy/database"
 
 type Component struct {
-	ID       string                 `json:"id"`
-	Name     string                 `json:"name"`
-	Property map[string]interface{} `json:"property"`
-	Hosts    []*database.Host       `json:"hosts"`
+	ID       string
+	Name     string
+	Property map[string]interface{}
+	Hosts    []*database.Host
 }
 
 func NewComponent(clusterID string, cp *database.Component) (*Component, error) {
@@ -21,9 +21,9 @@ func NewComponent(clusterID string, cp *database.Component) (*Component, error) 
 		hh, err := database.Instance(sqlConfig).RetrieveHost(clusterID, h)
 		if err != nil {
 			return nil, err
-		} else {
-			c.Hosts = append(c.Hosts, hh)
 		}
+
+		c.Hosts = append(c.Hosts, hh)
 	}
 
 	return c, nil
