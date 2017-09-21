@@ -41,6 +41,6 @@ type ClusterComponent struct {
 type Component struct {
 	ID       string                 `json:"id"`
 	Name     string                 `json:"name"`
-	Property map[string]interface{} `json:"property"`
+	Property map[string]interface{} `json:"properties"`
 	Hosts    []string               `json:"hosts"`
 }

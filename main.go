@@ -5,7 +5,6 @@ import (
 	"flag"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	"gitee.com/wisecloud/wise-deploy/database"
 	"gitee.com/wisecloud/wise-deploy/playbook"
@@ -67,13 +66,13 @@ func main() {
 
 		v1.GET("/clusters/:cluster_id/components", retrieveComponents)
 		v1.POST("/clusters/:cluster_id/components", createComponent)
-		v1.DELETE("/clusters/:cluster_id/components/:component_name", deleteComponent)
-		v1.PUT("/clusters/:cluster_id/components/:component_name", updateComponent)
-		v1.GET("/clusters/:cluster_id/components/:component_name", retrieveComponent)
+		v1.DELETE("/clusters/:cluster_id/components/:component_id", deleteComponent)
+		v1.PUT("/clusters/:cluster_id/components/:component_id", updateComponent)
+		v1.GET("/clusters/:cluster_id/components/:component_id", retrieveComponent)
 
 		v1.PUT("/config", setConfig)
 		v1.GET("/config", getConfig)
-		v1.PUT("/install", install)
+		v1.PUT("/install/:cluster_id", install)
 		v1.PUT("/reset", reset)
 		v1.PUT("/stop", stop)
 		v1.POST("/notify", notify)
@@ -118,13 +117,26 @@ func getConfig(c *gin.Context) {
 }
 
 func install(c *gin.Context) {
-	config := &playbook.DeploySeed{}
-	if err := c.BindJSON(config); err != nil {
+	op := make(map[string]string)
+	if err := c.BindJSON(&op); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
+
+	clusterID := c.Param("cluster_id")
+
+	cluster, err := database.
+		Instance(sqlConfig).
+		RetrieveCluster(clusterID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	config := playbook.NewDeploySeed(cluster)
 
 	if err := playbook.PreparePlaybooks(*workDir, config); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
@@ -133,7 +145,7 @@ func install(c *gin.Context) {
 		return
 	}
 
-	commands.Install(config.Step)
+	commands.Install(step)
 
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"status": "started",
@@ -141,22 +153,22 @@ func install(c *gin.Context) {
 }
 
 func reset(c *gin.Context) {
-	config := &playbook.DeploySeed{}
-	if err := c.BindJSON(config); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	// config := &playbook.DeploySeed{}
+	// if err := c.BindJSON(config); err != nil {
+	// 	c.IndentedJSON(http.StatusBadRequest, gin.H{
+	// 		"error": err.Error(),
+	// 	})
+	// 	return
+	// }
 
-	if err := playbook.PreparePlaybooks(*workDir, config); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+	// if err := playbook.PreparePlaybooks(*workDir, config); err != nil {
+	// 	c.IndentedJSON(http.StatusBadRequest, gin.H{
+	// 		"error": err.Error(),
+	// 	})
+	// 	return
+	// }
 
-	commands.Reset(config.Step)
+	// commands.Reset(config.Step)
 
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"status": "started",
@@ -210,20 +222,20 @@ func stats(c *gin.Context) {
 }
 
 func saveConfig(s *playbook.DeploySeed) error {
-	b, err := yaml.Marshal(s)
-	if err != nil {
-		return err
-	}
+	// b, err := yaml.Marshal(s)
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = ioutil.WriteFile("init.yaml", b, os.ModePerm)
-	if err != nil {
-		return err
-	}
+	// err = ioutil.WriteFile("init.yaml", b, os.ModePerm)
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = playbook.PreparePlaybooks(*workDir, s)
-	if err != nil {
-		return err
-	}
+	// err = playbook.PreparePlaybooks(*workDir, s)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

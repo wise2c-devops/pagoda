@@ -16,19 +16,19 @@ package main
         "id": "xxx",
         "name": "xxx",
         "description": "xxx",
-        "state": "green"
+        "state": "initial"
      },
      {
         "id": "xxx",
         "name": "xxx",
         "description": "xxx",
-        "state": "red"
+        "state": "success"
      },
      {
         "id": "xxx",
         "name": "xxx",
         "description": "xxx",
-        "state": "white"
+        "state": "failed"
      }
   ]
 *
@@ -50,7 +50,7 @@ package main
     "id": "xxx",
     "name": "xxx",
     "description": "xxx",
-    "state": "green",
+    "state": "failed",
     "hosts": [
       {
         "id", "xxx",
@@ -62,23 +62,23 @@ package main
       {
         "name": "etcd",
         "hosts": [
-          "xxx",
-          "xxx",
-          "xxx"
+          "id1",
+          "id2",
+          "id3"
         ],
-        "property": {
+        "properties": {
           "a": "xxx",
           "b": "xxx"
         }
       },
       {
-        "name": "loadbalancer",
+        "name": "mysql",
         "hosts": [
-          "xxx",
-          "xxx",
-          "xxx"
+          "id1",
+          "id2",
+          "id3"
         ],
-        "property": {
+        "properties": {
           "a": "xxx",
           "b": "xxx"
         }
@@ -176,10 +176,11 @@ package main
 * @apiSuccessExample {json} Success-Response:
   HTTP/1.1 200 OK
   [
-     {
-        "hostname": "xxx",
-        "ip": "xxx"
-     }
+    {
+      "id": "xxx",
+      "hostname": "xxx",
+      "ip": "xxx"
+    }
   ]
 *
 *
@@ -229,6 +230,11 @@ package main
 *
 * @apiSuccessExample {type} Success-Response:
   HTTP/1.1 200 OK
+  {
+    "id": "xxx",
+    "hostname": "xxx",
+    "ip": "xxx"
+  }
 *
 */
 
@@ -286,10 +292,10 @@ package main
     {
       "name": "etcd"
       "hosts": [
-        "xxx",
-        "xxx"
+        "id1",
+        "id2"
       ],
-      "property": {
+      "properties": {
         "caFile": "xxx"
       }
     },
@@ -299,10 +305,23 @@ package main
         "xxx",
         "xxx"
       ],
-      "property": {
-        "k8sVip": "xxx",
-        "esVip": "xxx",
-        "otherVip": "xxx"
+      "properties": {
+        "netInterface": "eth0",
+        "netMask": "24",
+        "vips": [
+          {
+            "type": "k8s",
+            "vip": "172.20.9.1"
+          },
+          {
+            "type": "es",
+            "vip": "172.20.9.2"
+          },
+          {
+            "type": "other",
+            "vip": "172.20.9.3"
+          }
+        ]
       }
     }
   ]
@@ -312,22 +331,20 @@ package main
 
 /**
 *
-* @api {POST} /v1/clusters/:cluster/components/:component component create
+* @api {POST} /v1/clusters/:cluster/components component create
 * @apiName create component
 * @apiGroup v1
 * @apiVersion  1.0.0
 *
 * @apiParamExample  {type} Request-Example:
-  http://172.20.20.1:8080/v1/clusters/1/components/loadbalancer
+  http://172.20.20.1:8080/v1/clusters/1/components
   {
-    "name": "loadbalancer",
+    "name": "etcd",
     "hosts": [
-      "xxx",
-      "xxx"
+      "id1",
+      "id2"
     ]
-    "k8sVip": "xxx",
-    "esVip": "xxx",
-    "otherVip": "xxx"
+    "properties": {}
   }
 *
 *
@@ -338,39 +355,45 @@ package main
 
 /**
 *
-* @api {PUT} /v1/clusters/:cluster/components/:component component update
+* @api {PUT} /v1/clusters/:cluster/components/:component_id component update
 * @apiName update component
 * @apiGroup v1
 * @apiVersion  1.0.0
 *
 * @apiParamExample  {type} Request-Example:
-  http://172.20.20.1:8080/v1/clusters/1/components/loadbalancer
+  http://172.20.20.1:8080/v1/clusters/1/components/idxxx
   {
-    "name": "loadbalancer",
+    "name": "etcd",
     "hosts": [
       "xxx",
       "xxx"
-    ]
-    "k8sVip": "xxx",
-    "esVip": "xxx",
-    "otherVip": "xxx"
+    ],
+    "properties": {}
   }
 *
 *
 * @apiSuccessExample {type} Success-Response:
   HTTP/1.1 200 OK
+  {
+    "name": "etcd",
+    "hosts": [
+      "xxx",
+      "xxx"
+    ],
+    "properties": {}
+  }
 *
 */
 
 /**
 *
-* @api {DELETE} /v1/cluster/:cluster/component/:component component delete
+* @api {DELETE} /v1/cluster/:cluster/component/:component_id component delete
 * @apiName delete component
 * @apiGroup v1
 * @apiVersion  1.0.0
 *
 * @apiParamExample  {type} Request-Example:
-  http://172.20.20.1:8080/v1/cluster/1/component/loadbalancer
+  http://172.20.20.1:8080/v1/cluster/1/component/idxxx
 *
 * @apiSuccessExample {type} Success-Response:
   HTTP/1.1 200 OK
@@ -379,26 +402,24 @@ package main
 
 /**
 *
-* @api {GET} /v1/cluster/:cluster/component/:component component retrieve
+* @api {GET} /v1/cluster/:cluster/component/:component_id component retrieve
 * @apiName retrieve component
 * @apiGroup v1
 * @apiVersion  1.0.0
 *
 * @apiParamExample  {String} Request-Example:
-  http://172.20.20.1:8080/v1/cluster/1/component/loadbalancer
+  http://172.20.20.1:8080/v1/cluster/1/component/idxxx
 *
 *
 * @apiSuccessExample {type} Success-Response:
   HTTP/1.1 200 OK
   {
-    "name": "loadbalancer",
+    "name": "etcd",
     "hosts": [
       "xxx",
       "xxx"
     ],
-    "k8sVip": "xxx",
-    "esVip": "xxx",
-    "otherVip": "xxx"
+    "properties": {}
   }
 *
 *

@@ -51,7 +51,14 @@ func createComponent(c *gin.Context) {
 			"error": err.Error(),
 		})
 	} else {
-		c.JSON(http.StatusOK, cp)
+		cc, err := NewComponent(clusterID, cp)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		} else {
+			c.JSON(http.StatusOK, cc)
+		}
 	}
 }
 
@@ -81,9 +88,9 @@ func updateComponent(c *gin.Context) {
 		return
 	}
 
-	if componentID != cp.Name {
+	if componentID != cp.ID {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "two component name must be equal",
+			"error": "two component id must be equal",
 		})
 		return
 	}
@@ -94,7 +101,14 @@ func updateComponent(c *gin.Context) {
 			"error": err.Error(),
 		})
 	} else {
-		c.JSON(http.StatusOK, cp)
+		cc, err := NewComponent(clusterID, cp)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		} else {
+			c.JSON(http.StatusOK, cc)
+		}
 	}
 }
 

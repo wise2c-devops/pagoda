@@ -15,13 +15,13 @@ import (
 )
 
 type DeploySeed2 struct {
-	registry     *Component
-	etcd         *Component
-	mySQL        *Component
-	loadBalancer *Component
-	k8sMaster    *Component
-	k8sNode      *Component
-	wiseCloud    *Component
+	Registry     *Component
+	Etcd         *Component
+	MySQL        *Component
+	LoadBalancer *Component
+	K8sMaster    *Component
+	K8sNode      *Component
+	WiseCloud    *Component
 }
 
 type Component struct {
@@ -29,38 +29,38 @@ type Component struct {
 	Hosts    []*database.Host
 }
 
-func newDeploySeed(c *database.Cluster) *DeploySeed2 {
+func NewDeploySeed(c *database.Cluster) *DeploySeed2 {
 	hs := make(map[string]*database.Host)
 	for _, h := range c.Hosts {
 		hs[h.ID] = h
 	}
 
 	ds := &DeploySeed2{
-		registry:     &Component{},
-		etcd:         &Component{},
-		mySQL:        &Component{},
-		loadBalancer: &Component{},
-		k8sMaster:    &Component{},
-		k8sNode:      &Component{},
-		wiseCloud:    &Component{},
+		Registry:     &Component{},
+		Etcd:         &Component{},
+		MySQL:        &Component{},
+		LoadBalancer: &Component{},
+		K8sMaster:    &Component{},
+		K8sNode:      &Component{},
+		WiseCloud:    &Component{},
 	}
 
 	for _, cp := range c.Components {
 		switch cp.Name {
 		case "etcd":
-			setComponentHost(hs, cp, ds.etcd)
+			setComponentHost(hs, cp, ds.Etcd)
 		case "registry":
-			setComponentHost(hs, cp, ds.registry)
+			setComponentHost(hs, cp, ds.Registry)
 		case "mysql":
-			setComponentHost(hs, cp, ds.mySQL)
+			setComponentHost(hs, cp, ds.MySQL)
 		case "loadbalancer":
-			setComponentHost(hs, cp, ds.loadBalancer)
+			setComponentHost(hs, cp, ds.LoadBalancer)
 		case "k8smaster":
-			setComponentHost(hs, cp, ds.k8sMaster)
+			setComponentHost(hs, cp, ds.K8sMaster)
 		case "k8snode":
-			setComponentHost(hs, cp, ds.k8sNode)
+			setComponentHost(hs, cp, ds.K8sNode)
 		case "wisecloud":
-			setComponentHost(hs, cp, ds.wiseCloud)
+			setComponentHost(hs, cp, ds.WiseCloud)
 		}
 	}
 
@@ -130,7 +130,7 @@ const (
 	tmplSuffix      = ".gotmpl"
 )
 
-func PreparePlaybooks(dir string, ds *DeploySeed) error {
+func PreparePlaybooks(dir string, ds *DeploySeed2) error {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func PreparePlaybooks(dir string, ds *DeploySeed) error {
 	return nil
 }
 
-func preparePlaybook(name string, ds *DeploySeed) error {
+func preparePlaybook(name string, ds *DeploySeed2) error {
 	tps, err := getTemplatePath(name)
 	if err != nil {
 		return err
@@ -163,7 +163,7 @@ func preparePlaybook(name string, ds *DeploySeed) error {
 	return nil
 }
 
-func applyTemplate(t *Template, ds *DeploySeed) error {
+func applyTemplate(t *Template, ds *DeploySeed2) error {
 	file, err := os.OpenFile(t.Dest, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0755)
 	if err != nil {
 		return fmt.Errorf("create template dest file %s error: %s", t.Dest, err)

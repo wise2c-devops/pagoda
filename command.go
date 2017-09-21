@@ -17,6 +17,28 @@ const (
 	failed
 )
 
+const (
+	registry     = "registry"
+	etcd         = "etcd"
+	mysql        = "mysql"
+	loadbalancer = "loadbalancer"
+	k8sMaster    = "k8smaster"
+	k8sNode      = "k8snode"
+	wisecloud    = "wisecloud"
+)
+
+var (
+	step = []string{
+		registry,
+		etcd,
+		mysql,
+		loadbalancer,
+		k8sMaster,
+		k8sNode,
+		wisecloud,
+	}
+)
+
 type Commands struct {
 	received     []string
 	currentIndex int
@@ -51,6 +73,9 @@ func (c *Commands) Launch(w string) {
 					break
 				}
 				c.run(w)
+				m := make(map[string]interface{})
+				m["data"] = "hehe"
+				ansibleChan <- m
 			} else {
 				c.complete(failed)
 			}

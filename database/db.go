@@ -172,7 +172,7 @@ func (e *SQLEngine) CreateComponent(clusterID string, cp *Component) error {
 
 func (e *SQLEngine) DeleteComponent(clusterID string, name string) error {
 	_, err := e.xe.Exec(
-		"delete from cluster_component where cluster_id = ? and component_name = ?",
+		"delete from cluster_component where cluster_id = ? and component_id = ?",
 		clusterID,
 		name,
 	)
@@ -187,9 +187,9 @@ func (e *SQLEngine) UpdateComponent(clusterID string, cp *Component) error {
 		Component:     cp,
 	}
 	i, err := e.xe.Where(
-		"cluster_id = ? and component_name = ?",
+		"cluster_id = ? and component_id = ?",
 		clusterID,
-		cp.Name,
+		cp.ID,
 	).Update(ccp)
 
 	if err != nil {
