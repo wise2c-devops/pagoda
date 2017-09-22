@@ -424,3 +424,42 @@ package main
 *
 *
 */
+
+/**
+*
+* @api {PUT} /v1/clusters/:cluster_id/deployment cluster deploy/reset
+* @apiName start deploy/reset cluster
+* @apiGroup v1
+* @apiVersion  1.0.0
+*
+* @apiSuccess (200) {type} name description
+*
+* @apiParamExample  {type} Request-Example:
+  http://172.20.20.1:8080/v1/clusters/1/deployment
+  {
+    "operation": "install/reset"
+  }
+*
+*
+* @apiSuccessExample {type} Success-Response:
+  HTTP/1.1 200 OK
+*
+*
+*/
+
+/**
+*
+* @api {DELETE} /v1/clusters/:cluster_id/deployment cluster stop deploy/reset
+* @apiName stop deploy/reset cluster
+* @apiGroup v1
+* @apiVersion  1.0.0
+*
+* @apiParamExample  {type} Request-Example:
+  http://172.20.20.1:8080/v1/clusters/1/deployment
+*
+*
+* @apiSuccessExample {type} Success-Response:
+  HTTP/1.1 200 OK
+*
+*
+*/

@@ -70,13 +70,15 @@ func main() {
 		v1.PUT("/clusters/:cluster_id/components/:component_id", updateComponent)
 		v1.GET("/clusters/:cluster_id/components/:component_id", retrieveComponent)
 
-		v1.PUT("/config", setConfig)
-		v1.GET("/config", getConfig)
-		v1.PUT("/install/:cluster_id", install)
-		v1.PUT("/reset", reset)
-		v1.PUT("/stop", stop)
+		v1.PUT("/clusters/:cluster_id/deployment", install)
+		v1.DELETE("/clusters/:cluster_id/deployment", stop)
 		v1.POST("/notify", notify)
 		v1.GET("/stats", stats)
+
+		v1.PUT("/config", setConfig)
+		v1.GET("/config", getConfig)
+		v1.PUT("/reset", reset)
+		v1.PUT("/stop", stop)
 		v1.Static("/docs", "apidoc")
 	}
 
