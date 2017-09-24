@@ -9,78 +9,8 @@ import (
 	"strings"
 	"text/template"
 
-	"gitee.com/wisecloud/wise-deploy/database"
-
 	"github.com/golang/glog"
 )
-
-type DeploySeed2 struct {
-	Registry     *Component
-	Etcd         *Component
-	MySQL        *Component
-	LoadBalancer *Component
-	K8sMaster    *Component
-	K8sNode      *Component
-	WiseCloud    *Component
-}
-
-type Component struct {
-	Property map[string]interface{}
-	Hosts    []*database.Host
-}
-
-func NewDeploySeed(c *database.Cluster) *DeploySeed2 {
-	hs := make(map[string]*database.Host)
-	for _, h := range c.Hosts {
-		hs[h.ID] = h
-	}
-
-	ds := &DeploySeed2{
-		Registry:     &Component{},
-		Etcd:         &Component{},
-		MySQL:        &Component{},
-		LoadBalancer: &Component{},
-		K8sMaster:    &Component{},
-		K8sNode:      &Component{},
-		WiseCloud:    &Component{},
-	}
-
-	for _, cp := range c.Components {
-		switch cp.Name {
-		case "etcd":
-			setComponentHost(hs, cp, ds.Etcd)
-		case "registry":
-			setComponentHost(hs, cp, ds.Registry)
-		case "mysql":
-			setComponentHost(hs, cp, ds.MySQL)
-		case "loadbalancer":
-			setComponentHost(hs, cp, ds.LoadBalancer)
-		case "k8smaster":
-			setComponentHost(hs, cp, ds.K8sMaster)
-		case "k8snode":
-			setComponentHost(hs, cp, ds.K8sNode)
-		case "wisecloud":
-			setComponentHost(hs, cp, ds.WiseCloud)
-		}
-	}
-
-	return ds
-}
-
-func setComponentHost(
-	hs map[string]*database.Host,
-	sourceCp *database.Component,
-	destCp *Component,
-) {
-	destCp.Property = sourceCp.Property
-	for _, h := range sourceCp.Hosts {
-		th, ok := hs[h]
-		if !ok {
-			panic(fmt.Errorf("unexpected host: %s", h))
-		}
-		destCp.Hosts = append(destCp.Hosts, th)
-	}
-}
 
 type K8sNode struct {
 	Wise2cController []string `yaml:"wise2cController"`

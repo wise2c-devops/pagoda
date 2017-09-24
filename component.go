@@ -28,3 +28,15 @@ func NewComponent(clusterID string, cp *database.Component) (*Component, error) 
 
 	return c, nil
 }
+
+type Notification struct {
+	Data map[string]interface{} `json:"data"`
+	Now  string                 `json:"now"`
+	Task struct {
+		Name  string `json:"name"`
+		State string `json:"state"`
+	} `json:"task"`
+	Stage string `json:"stage"`
+	State string `json:"state"`
+	Host  string `json:"host"`
+}

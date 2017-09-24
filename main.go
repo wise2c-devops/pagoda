@@ -23,7 +23,8 @@ var (
 			return true
 		},
 	}
-	ansibleChan = make(chan map[string]interface{})
+	ansibleChan = make(chan *Notification)
+	statsChan   = make(chan *Notification)
 	commands    = NewCommands()
 
 	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
@@ -129,9 +130,7 @@ func install(c *gin.Context) {
 
 	clusterID := c.Param("cluster_id")
 
-	cluster, err := database.
-		Instance(sqlConfig).
-		RetrieveCluster(clusterID)
+	cluster, err := database.Instance(sqlConfig).RetrieveCluster(clusterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -140,14 +139,23 @@ func install(c *gin.Context) {
 	}
 	config := playbook.NewDeploySeed(cluster)
 
-	if err := playbook.PreparePlaybooks(*workDir, config); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{
+	if err = playbook.PreparePlaybooks(*workDir, config); err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
 
-	commands.Install(step)
+	commands.Install(cluster)
+
+	cluster.State = database.Processing
+	err = database.Instance(sqlConfig).UpdateCluster(cluster)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"status": "started",
@@ -182,8 +190,9 @@ func stop(c *gin.Context) {
 }
 
 func notify(c *gin.Context) {
-	config := make(map[string]interface{})
-	if err := c.BindJSON(&config); err != nil {
+	config := &Notification{}
+	if err := c.BindJSON(config); err != nil {
+		glog.Error(err)
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -208,7 +217,7 @@ func stats(c *gin.Context) {
 	defer wc.Close()
 
 	for {
-		m := <-ansibleChan
+		m := <-statsChan
 		b, err := json.Marshal(m)
 		if err != nil {
 			glog.Errorf("marshal ansible message error: %v", err)
