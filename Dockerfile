@@ -6,4 +6,4 @@ VOLUME [ "/deploy" ]
 COPY wise-deploy .
 COPY table.sql .
 
-ENTRYPOINT [ "bash", "-c", "/root/entrypoint.sh &\n ./wise-deploy -logtostderr" ]
+ENTRYPOINT [ "bash", "-c", "/root/entrypoint.sh &\n ./wise-deploy -logtostderr -v 4 -w /workspace" ]

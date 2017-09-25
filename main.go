@@ -146,7 +146,30 @@ func install(c *gin.Context) {
 		return
 	}
 
-	commands.Install(cluster)
+	if err = commands.Process(); err != nil {
+		c.IndentedJSON(http.StatusForbidden, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	o, ok := op["operation"]
+	if !ok {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"error": "please give me a operation",
+		})
+		return
+	}
+	if o == "install" {
+		commands.Install(cluster)
+	} else if o == "reset" {
+		commands.Reset(cluster)
+	} else {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"error": "please give me a right operation",
+		})
+		return
+	}
 
 	cluster.State = database.Processing
 	err = database.Instance(sqlConfig).UpdateCluster(cluster)

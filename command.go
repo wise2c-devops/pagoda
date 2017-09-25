@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os/exec"
 	"path"
 
@@ -46,6 +47,7 @@ type Commands struct {
 	currentCmd   *exec.Cmd
 	stopChan     chan bool
 	nextChan     chan bool
+	processChan  chan bool
 	installChan  chan *database.Cluster
 	resetChan    chan *database.Cluster
 	ansibleFile  string
@@ -58,6 +60,7 @@ func NewCommands() *Commands {
 		received:     step,
 		stopChan:     make(chan bool),
 		nextChan:     make(chan bool, 1), //the length must be one
+		processChan:  make(chan bool, 1), //the length must be one
 		installChan:  make(chan *database.Cluster),
 		resetChan:    make(chan *database.Cluster),
 	}
@@ -67,6 +70,10 @@ func (c *Commands) Launch(w string) {
 	for {
 		select {
 		case n := <-ansibleChan:
+			if c.currentIndex == -1 {
+				glog.Error("received a improper notify")
+				break
+			}
 			n.Stage = c.received[c.currentIndex]
 			n.State = n.Task.State
 			statsChan <- n
@@ -95,6 +102,15 @@ func (c *Commands) Launch(w string) {
 	}
 }
 
+func (c *Commands) Process() error {
+	select {
+	case c.processChan <- true:
+		return nil
+	default:
+		return fmt.Errorf("I'm processing a action")
+	}
+}
+
 func (c *Commands) Install(cluster *database.Cluster) {
 	c.installChan <- cluster
 }
@@ -118,10 +134,10 @@ func (c *Commands) run(w string) {
 			glog.V(3).Infof("start step %s", step)
 			err := cmd.Run()
 			if err != nil {
-				glog.V(3).Infof("step %s compeleted", step)
+				glog.V(3).Infof("step %s failed ", step)
 				c.nextChan <- false
 			} else {
-				glog.V(3).Infof("step %s failed", step)
+				glog.V(3).Infof("step %s compeleted", step)
 				c.nextChan <- true
 			}
 		}()
@@ -150,5 +166,6 @@ func (c *Commands) complete(code CompleteCode) {
 		glog.Errorf("update cluster %s error %v", c.cluster.ID, err)
 		return
 	}
+	<-c.processChan
 	c.currentIndex = -1
 }
