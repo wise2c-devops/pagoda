@@ -3,13 +3,10 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"io/ioutil"
 	"net/http"
 
 	"gitee.com/wisecloud/wise-deploy/database"
 	"gitee.com/wisecloud/wise-deploy/playbook"
-
-	"gopkg.in/yaml.v2"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -31,7 +28,7 @@ var (
 
 	sqlConfig = &database.EngineConfig{
 		SQLType:      "sqlite3",
-		ShowSQL:      true,
+		ShowSQL:      false,
 		ShowExecTime: true,
 	}
 )
@@ -76,47 +73,11 @@ func main() {
 		v1.POST("/notify", notify)
 		v1.GET("/stats", stats)
 
-		v1.PUT("/config", setConfig)
-		v1.GET("/config", getConfig)
-		v1.PUT("/reset", reset)
-		v1.PUT("/stop", stop)
 		v1.Static("/docs", "apidoc")
 	}
 
 	// Listen and Server in 0.0.0.0:8080
 	r.Run("0.0.0.0:8080")
-}
-
-func setConfig(c *gin.Context) {
-	config := &playbook.DeploySeed{}
-	if err := c.BindJSON(config); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	if err := saveConfig(config); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	c.IndentedJSON(http.StatusOK, gin.H{
-		"status": "success",
-	})
-}
-
-func getConfig(c *gin.Context) {
-	d, err := readConfig("init.yml")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-	}
-
-	c.IndentedJSON(http.StatusOK, d)
 }
 
 func install(c *gin.Context) {
@@ -185,29 +146,6 @@ func install(c *gin.Context) {
 	})
 }
 
-func reset(c *gin.Context) {
-	// config := &playbook.DeploySeed{}
-	// if err := c.BindJSON(config); err != nil {
-	// 	c.IndentedJSON(http.StatusBadRequest, gin.H{
-	// 		"error": err.Error(),
-	// 	})
-	// 	return
-	// }
-
-	// if err := playbook.PreparePlaybooks(*workDir, config); err != nil {
-	// 	c.IndentedJSON(http.StatusBadRequest, gin.H{
-	// 		"error": err.Error(),
-	// 	})
-	// 	return
-	// }
-
-	// commands.Reset(config.Step)
-
-	c.IndentedJSON(http.StatusOK, gin.H{
-		"status": "started",
-	})
-}
-
 func stop(c *gin.Context) {
 	commands.Stop()
 }
@@ -253,40 +191,4 @@ func stats(c *gin.Context) {
 			break
 		}
 	}
-}
-
-func saveConfig(s *playbook.DeploySeed) error {
-	// b, err := yaml.Marshal(s)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = ioutil.WriteFile("init.yaml", b, os.ModePerm)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = playbook.PreparePlaybooks(*workDir, s)
-	// if err != nil {
-	// 	return err
-	// }
-
-	return nil
-}
-
-func readConfig(filename string) (*playbook.DeploySeed, error) {
-	b, err := ioutil.ReadFile(filename)
-	if err != nil {
-		glog.Errorf("read init.yml error: %v", err)
-		return nil, err
-	}
-
-	d := &playbook.DeploySeed{}
-	err = yaml.Unmarshal(b, d)
-	if err != nil {
-		glog.Errorf("unmarshal init.yml error: %v", err)
-		return nil, err
-	}
-
-	return d, nil
 }

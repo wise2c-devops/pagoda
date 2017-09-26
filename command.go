@@ -70,13 +70,17 @@ func (c *Commands) Launch(w string) {
 	for {
 		select {
 		case n := <-ansibleChan:
+			glog.V(4).Info("send msg %s", n.Data["msg"])
 			if c.currentIndex == -1 {
 				glog.Error("received a improper notify")
 				break
 			}
 			n.Stage = c.received[c.currentIndex]
 			n.State = n.Task.State
-			statsChan <- n
+			select {
+			case statsChan <- n:
+			default:
+			}
 		case <-c.stopChan:
 			c.complete(stopped)
 		case next := <-c.nextChan:
@@ -112,10 +116,12 @@ func (c *Commands) Process() error {
 }
 
 func (c *Commands) Install(cluster *database.Cluster) {
+	glog.V(3).Infof("begin to install cluster %s", cluster.Name)
 	c.installChan <- cluster
 }
 
 func (c *Commands) Reset(cluster *database.Cluster) {
+	glog.V(3).Infof("begin to reset cluster %s", cluster.Name)
 	c.resetChan <- cluster
 }
 
@@ -166,6 +172,10 @@ func (c *Commands) complete(code CompleteCode) {
 		glog.Errorf("update cluster %s error %v", c.cluster.ID, err)
 		return
 	}
-	<-c.processChan
+	select {
+	case <-c.processChan:
+	default:
+	}
+	glog.V(3).Info("finish a install/reset")
 	c.currentIndex = -1
 }
