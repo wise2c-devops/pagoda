@@ -146,13 +146,6 @@ func install(c *gin.Context) {
 		return
 	}
 
-	if err = commands.Process(); err != nil {
-		c.IndentedJSON(http.StatusForbidden, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
 	o, ok := op["operation"]
 	if !ok {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
@@ -167,6 +160,13 @@ func install(c *gin.Context) {
 	} else {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": "please give me a right operation",
+		})
+		return
+	}
+
+	if err = commands.Process(); err != nil {
+		c.IndentedJSON(http.StatusForbidden, gin.H{
+			"error": err.Error(),
 		})
 		return
 	}

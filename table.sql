@@ -1,8 +1,8 @@
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS `cluster` (
-    `id` TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
-    `name` TEXT NOT NULL, 
+    `id` TEXT PRIMARY KEY NOT NULL,
+    `name` TEXT NOT NULL COLLATE NOCASE, 
     `description` TEXT NULL, 
     `state` TEXT NULL
 );
