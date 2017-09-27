@@ -20,6 +20,7 @@ const (
 )
 
 const (
+	initHost     = "init"
 	registry     = "registry"
 	etcd         = "etcd"
 	mysql        = "mysql"
@@ -31,6 +32,7 @@ const (
 
 var (
 	step = []string{
+		initHost,
 		registry,
 		etcd,
 		mysql,
