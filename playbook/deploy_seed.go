@@ -14,6 +14,33 @@ type DeploySeed2 struct {
 	K8sMaster    *Component
 	K8sNode      *Component
 	WiseCloud    *Component
+	Hosts        []*database.Host
+}
+
+func (d *DeploySeed2) EsEndpoint() string {
+	ip := d.LoadBalancer.getEndpoint("es")
+	if ip != "" {
+		return ip
+	}
+
+	if len(d.K8sNode.Hosts) > 0 {
+		return d.K8sNode.Hosts[0].IP
+	}
+
+	return ""
+}
+
+func (d *DeploySeed2) OtherEndpoint() string {
+	ip := d.LoadBalancer.getEndpoint("other")
+	if ip != "" {
+		return ip
+	}
+
+	if len(d.K8sNode.Hosts) > 0 {
+		return d.K8sNode.Hosts[0].IP
+	}
+
+	return "192.168.0.1"
 }
 
 func (d *DeploySeed2) RegistryEndpoint() string {
@@ -75,6 +102,7 @@ func NewDeploySeed(c *database.Cluster) *DeploySeed2 {
 		K8sNode:      &Component{},
 		WiseCloud:    &Component{},
 	}
+	ds.Hosts = c.Hosts
 
 	for _, cp := range c.Components {
 		switch cp.Name {
