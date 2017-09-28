@@ -65,6 +65,7 @@ func NewCommands() *Commands {
 		processChan:  make(chan bool, 1), //the length must be one
 		installChan:  make(chan *database.Cluster),
 		resetChan:    make(chan *database.Cluster),
+		currentCmd:   nil,
 	}
 }
 
@@ -72,17 +73,13 @@ func (c *Commands) Launch(w string) {
 	for {
 		select {
 		case n := <-ansibleChan:
-			glog.V(4).Info("send msg %s", n.Data["msg"])
 			if c.currentIndex == -1 {
 				glog.Error("received a improper notify")
 				break
 			}
 			n.Stage = c.received[c.currentIndex]
 			n.State = n.Task.State
-			select {
-			case statsChan <- n:
-			default:
-			}
+			clusterRuntime.Notify(n)
 		case <-c.stopChan:
 			c.complete(stopped)
 		case next := <-c.nextChan:
@@ -161,6 +158,10 @@ func (c *Commands) complete(code CompleteCode) {
 		glog.V(3).Info("complete all install step")
 	case stopped:
 		c.cluster.State = database.Failed
+		if c.currentCmd == nil {
+			glog.Warning("receive a stop but I haven't start")
+			return
+		}
 		if err := c.currentCmd.Process.Kill(); err != nil {
 			glog.Errorf("stop install error: %v", err)
 		}

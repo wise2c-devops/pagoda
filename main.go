@@ -20,9 +20,9 @@ var (
 			return true
 		},
 	}
-	ansibleChan = make(chan *Notification)
-	statsChan   = make(chan *Notification)
-	commands    = NewCommands()
+	ansibleChan    = make(chan *Notification)
+	commands       = NewCommands()
+	clusterRuntime = NewClusterRuntime()
 
 	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
 
@@ -36,6 +36,7 @@ var (
 func init() {
 	flag.Parse()
 	go commands.Launch(*workDir)
+	go clusterRuntime.Run()
 }
 
 func main() {
@@ -177,8 +178,11 @@ func stats(c *gin.Context) {
 	}
 	defer wc.Close()
 
+	ch := clusterRuntime.Registe(c.Request.RemoteAddr)
+	defer clusterRuntime.Unregiste(c.Request.RemoteAddr)
+
 	for {
-		m := <-statsChan
+		m := <-ch
 		b, err := json.Marshal(m)
 		if err != nil {
 			glog.Errorf("marshal ansible message error: %v", err)

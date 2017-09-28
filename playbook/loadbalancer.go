@@ -2,6 +2,19 @@ package playbook
 
 type LoadBalancer Component
 
+// loadbalancer should have property like this:
+/*
+ * {
+ *	 "vips": [
+ * 	   {
+ *	      "type": "k8s/es/other",
+ *        "vip": "172.20.9.2"
+ *     }
+ *   ],
+ *   "netInterface": "etch160",
+ *   "netMask": "16"
+ * }
+ */
 func (l *LoadBalancer) getEndpoint(name string) string {
 	vips, find := l.Property["vips"]
 	if !find {
