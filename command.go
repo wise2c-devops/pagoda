@@ -78,7 +78,6 @@ func (c *Commands) Launch(w string) {
 				break
 			}
 			n.Stage = c.received[c.currentIndex]
-			n.State = n.Task.State
 			clusterRuntime.Notify(n)
 		case <-c.stopChan:
 			c.complete(stopped)
@@ -99,7 +98,7 @@ func (c *Commands) Launch(w string) {
 			c.nextChan <- true
 		case rec := <-c.resetChan:
 			c.cluster = rec
-			c.ansibleFile = "reset.ansible"
+			c.ansibleFile = "clean.ansible"
 			c.nextChan <- true
 		}
 	}
@@ -157,11 +156,11 @@ func (c *Commands) complete(code CompleteCode) {
 		c.cluster.State = database.Success
 		glog.V(3).Info("complete all install step")
 	case stopped:
-		c.cluster.State = database.Failed
-		if c.currentCmd == nil {
+		if c.cluster == nil {
 			glog.Warning("receive a stop but I haven't start")
 			return
 		}
+		c.cluster.State = database.Failed
 		if err := c.currentCmd.Process.Kill(); err != nil {
 			glog.Errorf("stop install error: %v", err)
 		}

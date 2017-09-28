@@ -51,7 +51,7 @@ func (cr *ClusterRuntime) Unregiste(name string) {
 	select {
 	case cr.unregisteChan <- name:
 	default:
-		glog.Errorf("registe %s fail", name)
+		glog.Errorf("unregiste %s fail", name)
 	}
 }
 
