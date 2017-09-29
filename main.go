@@ -20,7 +20,7 @@ var (
 			return true
 		},
 	}
-	ansibleChan    = make(chan *Notification)
+	ansibleChan    = make(chan *Notification, 5)
 	commands       = NewCommands()
 	clusterRuntime = NewClusterRuntime()
 
