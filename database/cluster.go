@@ -1,5 +1,9 @@
 package database
 
+import (
+	"time"
+)
+
 const (
 	Initial    = "initial"
 	Processing = "processing"
@@ -43,4 +47,22 @@ type Component struct {
 	Name     string                 `json:"name"`
 	Property map[string]interface{} `json:"properties"`
 	Hosts    []string               `json:"hosts"`
+}
+
+type ClusterLog struct {
+	ClusterID string        `xorm:"varchar(255) notnull 'cluster_id'"`
+	Created   time.Time     `xorm:"created"`
+	Log       *Notification `xorm:"json notnull 'log'"`
+}
+
+type Notification struct {
+	Data map[string]interface{} `json:"data"`
+	Now  string                 `json:"now"`
+	Task struct {
+		Name  string `json:"name"`
+		State string `json:"state"`
+	} `json:"task"`
+	Stage string `json:"stage"`
+	State string `json:"state"`
+	Host  string `json:"host"`
 }

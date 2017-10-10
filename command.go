@@ -78,7 +78,7 @@ func (c *Commands) Launch(w string) {
 				break
 			}
 			n.Stage = c.received[c.currentIndex]
-			clusterRuntime.Notify(n)
+			clusterRuntime.Notify(c.cluster, n)
 		case <-c.stopChan:
 			c.complete(stopped)
 		case next := <-c.nextChan:
@@ -89,6 +89,7 @@ func (c *Commands) Launch(w string) {
 					break
 				}
 				c.run(w)
+				clusterRuntime.RotateStage(c.cluster.ID, c.received[c.currentIndex])
 			} else {
 				c.complete(failed)
 			}
@@ -96,10 +97,12 @@ func (c *Commands) Launch(w string) {
 			c.cluster = rec
 			c.ansibleFile = "install.ansible"
 			c.nextChan <- true
+			clusterRuntime.ProcessCluster(c.cluster)
 		case rec := <-c.resetChan:
 			c.cluster = rec
 			c.ansibleFile = "clean.ansible"
 			c.nextChan <- true
+			clusterRuntime.ProcessCluster(c.cluster)
 		}
 	}
 }
@@ -180,4 +183,5 @@ func (c *Commands) complete(code CompleteCode) {
 	}
 	glog.V(3).Info("finish a install/reset")
 	c.currentIndex = -1
+	clusterRuntime.RmCluster(c.cluster.ID)
 }

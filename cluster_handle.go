@@ -6,6 +6,7 @@ import (
 	"gitee.com/wisecloud/wise-deploy/database"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/render"
 )
 
 func retrieveClusters(c *gin.Context) {
@@ -89,4 +90,21 @@ func retrieveCluster(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, cluster)
 	}
+}
+
+func ErrResponse(c *gin.Context) {
+	c.Header("Content-Type", "application/json")
+	c.Next()
+
+	if len(c.Errors) == 0 {
+		return
+	}
+
+	err := c.Errors[len(c.Errors)-1]
+	render.WriteJSON(
+		c.Writer,
+		gin.H{
+			"error": err.Error(),
+		},
+	)
 }

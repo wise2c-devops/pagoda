@@ -33,3 +33,12 @@ CREATE TABLE IF NOT EXISTS `cluster_host` (
 CREATE UNIQUE INDEX IF NOT EXISTS `UQE_cluster_host_ip` ON `cluster_host` (`cluster_id`, `ip`);
 
 CREATE UNIQUE INDEX IF NOT EXISTS `UQE_cluster_host_hostname` ON `cluster_host` (`cluster_id`, `hostname`);
+
+CREATE TABLE IF NOT EXISTS `cluster_log` (
+    `cluster_id` TEXT NOT NULL, 
+    `created` DATETIME NOT NULL, 
+    `log` TEXT NOT NULL, 
+    FOREIGN KEY(cluster_id) REFERENCES cluster(id)
+);
+
+CREATE INDEX IF NOT EXISTS `I_cluster_log` ON `cluster_log` (`cluster_id`);

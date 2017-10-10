@@ -1,39 +1,97 @@
 package main
 
 import (
+	"fmt"
+	"sort"
+	"sync"
+
 	"gitee.com/wisecloud/wise-deploy/database"
 	"github.com/golang/glog"
 )
 
 type notifyChannel struct {
 	name string
-	c    chan *Notification
+	c    chan *database.Notification
+}
+
+type ClusterStatus struct {
+	Stages       []string
+	CurrentStage string
 }
 
 // ClusterRuntime all cluster in Runtime
-// wschans should have cluser name as key if want to support multiple clusters
-// be installed currently
+// wschans should have cluster name as key if want to support multiple clusters
+// be installing currently
 type ClusterRuntime struct {
-	cluster          map[string]*database.Cluster
-	notificationChan chan *Notification
-	wsChans          map[string]chan *Notification
+	cluster map[string]*ClusterStatus
+	mux     *sync.Mutex
 
-	registeChan   chan *notifyChannel
-	unregisteChan chan string
+	notificationChan chan *database.Notification
+	wsChans          map[string]chan *database.Notification
+	registeChan      chan *notifyChannel
+	unregisteChan    chan string
 }
 
 func NewClusterRuntime() *ClusterRuntime {
 	return &ClusterRuntime{
-		cluster:          make(map[string]*database.Cluster),
-		notificationChan: make(chan *Notification),
-		wsChans:          make(map[string]chan *Notification),
+		cluster:          make(map[string]*ClusterStatus),
+		mux:              &sync.Mutex{},
+		notificationChan: make(chan *database.Notification),
+		wsChans:          make(map[string]chan *database.Notification),
 		registeChan:      make(chan *notifyChannel),
 		unregisteChan:    make(chan string),
 	}
 }
 
-func (cr *ClusterRuntime) Registe(name string) chan *Notification {
-	c := make(chan *Notification)
+func (cr *ClusterRuntime) ProcessCluster(c *database.Cluster) {
+	//sorted components
+	sc := make([]string, 0, len(c.Components))
+	for _, cc := range c.Components {
+		sc = append(sc, cc.Name)
+	}
+
+	sort.Sort(ByName(sc))
+	clusterStatus := &ClusterStatus{
+		Stages: sc,
+	}
+
+	cr.mux.Lock()
+	defer cr.mux.Unlock()
+
+	cr.cluster[c.ID] = clusterStatus
+}
+
+func (cr *ClusterRuntime) RmCluster(clusterID string) {
+	cr.mux.Lock()
+	defer cr.mux.Unlock()
+
+	if _, find := cr.cluster[clusterID]; find {
+		delete(cr.cluster, clusterID)
+	} else {
+		glog.Errorf("can't find cluster %s", clusterID)
+	}
+}
+
+func (cr *ClusterRuntime) RotateStage(clusterID, name string) {
+	cr.mux.Lock()
+	defer cr.mux.Unlock()
+
+	cr.cluster[clusterID].CurrentStage = name
+}
+
+func (cr *ClusterRuntime) RetrieveStatus(clusterID string) (*ClusterStatus, error) {
+	cr.mux.Lock()
+	defer cr.mux.Unlock()
+
+	if s, find := cr.cluster[clusterID]; find {
+		return s, nil
+	}
+
+	return nil, fmt.Errorf("can't find cluster %s", clusterID)
+}
+
+func (cr *ClusterRuntime) Registe(name string) chan *database.Notification {
+	c := make(chan *database.Notification)
 	nc := &notifyChannel{
 		name: name,
 		c:    c,
@@ -55,7 +113,11 @@ func (cr *ClusterRuntime) Unregiste(name string) {
 	}
 }
 
-func (cr *ClusterRuntime) Notify(n *Notification) {
+func (cr *ClusterRuntime) Notify(c *database.Cluster, n *database.Notification) {
+	if err := database.Instance(sqlConfig).CreateLog(c.ID, n); err != nil {
+		glog.Error(err)
+	}
+
 	select {
 	case cr.notificationChan <- n:
 	default:
@@ -78,6 +140,7 @@ func (cr *ClusterRuntime) Run() {
 
 			delete(cr.wsChans, name)
 			close(c)
+			glog.V(2).Infof("remove an observer: %s", name)
 		case event := <-cr.notificationChan:
 			for k, v := range cr.wsChans {
 				select {

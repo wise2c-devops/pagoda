@@ -20,7 +20,7 @@ var (
 			return true
 		},
 	}
-	ansibleChan    = make(chan *Notification, 5)
+	ansibleChan    = make(chan *database.Notification, 5)
 	commands       = NewCommands()
 	clusterRuntime = NewClusterRuntime()
 
@@ -68,6 +68,9 @@ func main() {
 		v1.DELETE("/clusters/:cluster_id/components/:component_id", deleteComponent)
 		v1.PUT("/clusters/:cluster_id/components/:component_id", updateComponent)
 		v1.GET("/clusters/:cluster_id/components/:component_id", retrieveComponent)
+
+		v1.GET("/clusters/:cluster_id/logs", retrieveLogs)
+		v1.GET("/clusters/:cluster_id/status", retrieveClusterStatus)
 
 		v1.PUT("/clusters/:cluster_id/deployment", install)
 		v1.DELETE("/clusters/:cluster_id/deployment", stop)
@@ -152,7 +155,7 @@ func stop(c *gin.Context) {
 }
 
 func notify(c *gin.Context) {
-	config := &Notification{}
+	config := &database.Notification{}
 	if err := c.BindJSON(config); err != nil {
 		glog.Error(err)
 		c.IndentedJSON(http.StatusBadRequest, gin.H{

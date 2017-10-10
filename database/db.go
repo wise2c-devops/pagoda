@@ -294,3 +294,39 @@ func (e *SQLEngine) RetrieveHost(
 
 	return ch.Host, err
 }
+
+func (e *SQLEngine) RetrieveLogs(clusterID string) ([]*Notification, error) {
+	cls := make([]*ClusterLog, 0)
+
+	if err := e.xe.
+		Where("cluster_id = ?", clusterID).
+		OrderBy("created").
+		Find(&cls); err != nil {
+		return nil, err
+	}
+
+	logs := make([]*Notification, 0, len(cls))
+	for _, cl := range cls {
+		logs = append(logs, cl.Log)
+	}
+
+	return logs, nil
+}
+
+func (e *SQLEngine) CreateLog(clusterID string, n *Notification) error {
+	cn := &ClusterLog{
+		ClusterID: clusterID,
+		Log:       n,
+	}
+
+	_, err := e.xe.InsertOne(cn)
+	return err
+}
+
+func (e *SQLEngine) DeleteLogs(clusterID string) error {
+	_, err := e.xe.Exec(
+		"delete from cluster_log where cluster_id = ?",
+		clusterID,
+	)
+	return err
+}

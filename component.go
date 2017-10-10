@@ -2,6 +2,30 @@ package main
 
 import "gitee.com/wisecloud/wise-deploy/database"
 
+var (
+	ComponentMap = map[string]int{
+		"registry":     0,
+		"etcd":         1,
+		"mysql":        2,
+		"loadbalancer": 3,
+		"k8smaster":    4,
+		"k8snode":      5,
+		"wisecloud":    6,
+	}
+)
+
+type ByName []string
+
+func (s ByName) Len() int {
+	return len(s)
+}
+func (s ByName) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s ByName) Less(i, j int) bool {
+	return ComponentMap[s[i]] < ComponentMap[s[j]]
+}
+
 type Component struct {
 	ID       string                 `json:"id"`
 	Name     string                 `json:"name"`
@@ -27,16 +51,4 @@ func NewComponent(clusterID string, cp *database.Component) (*Component, error) 
 	}
 
 	return c, nil
-}
-
-type Notification struct {
-	Data map[string]interface{} `json:"data"`
-	Now  string                 `json:"now"`
-	Task struct {
-		Name  string `json:"name"`
-		State string `json:"state"`
-	} `json:"task"`
-	Stage string `json:"stage"`
-	State string `json:"state"`
-	Host  string `json:"host"`
 }
