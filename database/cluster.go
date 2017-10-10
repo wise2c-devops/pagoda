@@ -57,7 +57,7 @@ type ClusterLog struct {
 
 type Notification struct {
 	Data map[string]interface{} `json:"data"`
-	Now  string                 `json:"now"`
+	Now  string                 `json:"time"`
 	Task struct {
 		Name  string `json:"name"`
 		State string `json:"state"`

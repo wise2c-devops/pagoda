@@ -15,8 +15,8 @@ type notifyChannel struct {
 }
 
 type ClusterStatus struct {
-	Stages       []string
-	CurrentStage string
+	Stages       []string `json:"stages"`
+	CurrentStage string   `json:"currentStage"`
 }
 
 // ClusterRuntime all cluster in Runtime
@@ -54,6 +54,8 @@ func (cr *ClusterRuntime) ProcessCluster(c *database.Cluster) {
 	clusterStatus := &ClusterStatus{
 		Stages: sc,
 	}
+
+	database.Instance(sqlConfig).DeleteLogs(c.ID)
 
 	cr.mux.Lock()
 	defer cr.mux.Unlock()
