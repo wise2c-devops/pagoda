@@ -78,7 +78,12 @@ func (cr *ClusterRuntime) RotateStage(clusterID, name string) {
 	cr.mux.Lock()
 	defer cr.mux.Unlock()
 
-	cr.cluster[clusterID].CurrentStage = name
+	if i := sort.Search(len(cr.cluster[clusterID].Stages), func(i int) bool {
+		return ComponentMap[cr.cluster[clusterID].Stages[i]] == ComponentMap[name]
+	}); i < len(cr.cluster[clusterID].Stages) &&
+		cr.cluster[clusterID].Stages[i] == name {
+		cr.cluster[clusterID].CurrentStage = name
+	}
 }
 
 func (cr *ClusterRuntime) RetrieveStatus(clusterID string) (*ClusterStatus, error) {
