@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"net/http"
 
 	"gitee.com/wisecloud/wise-deploy/database"
@@ -50,7 +51,22 @@ func main() {
 	r.StaticFile("/favicon.ico", "favicon.ico")
 
 	v1 := r.Group("/v1")
+
 	{
+		for k := range ComponentMap {
+			r.Group("/v1").StaticFile(
+				fmt.Sprintf(
+					"/components/%s/property",
+					k,
+				),
+				fmt.Sprintf(
+					"/%s/%s-playbook/file/property.yaml",
+					*workDir,
+					k,
+				),
+			)
+		}
+
 		v1.GET("/clusters", retrieveClusters)
 		v1.POST("/clusters", createCluster)
 		v1.DELETE("/clusters/:cluster_id", deleteCluster)

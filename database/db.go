@@ -41,7 +41,7 @@ func Instance(config *EngineConfig) *SQLEngine {
 func NewEngine(config *EngineConfig) (*SQLEngine, error) {
 	e := &SQLEngine{}
 	if config.SQLType == "sqlite3" {
-		engine, err := xorm.NewEngine("sqlite3", "cluster.db")
+		engine, err := xorm.NewEngine("sqlite3", "/deploy/cluster.db")
 		if err != nil {
 			return nil, err
 		}
