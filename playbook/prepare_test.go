@@ -1,13 +1,48 @@
 package playbook
 
 import "testing"
+import "gitee.com/wisecloud/wise-deploy/database"
 
 func TestPreparePlaybooks(t *testing.T) {
 	ds := &DeploySeed2{
-		
+		Registry: &Component{
+			Hosts: []*database.Host{
+				&database.Host{IP: "192.168.0.101"},
+			},
+		},
+		Etcd: &Component{
+			Hosts: []*database.Host{
+				&database.Host{IP: "192.168.0.101"},
+			},
+		},
+		MySQL: &Component{
+			Hosts: []*database.Host{
+				&database.Host{IP: "192.168.0.101"},
+			},
+		},
+		LoadBalancer: &LoadBalancer{
+			Hosts: []*database.Host{
+				&database.Host{IP: "192.168.0.101"},
+			},
+		},
+		K8sMaster: &Component{
+			Hosts: []*database.Host{
+				&database.Host{IP: "192.168.0.101"},
+			},
+		},
+		K8sNode: &Component{
+			Hosts: []*database.Host{
+				&database.Host{IP: "192.168.0.101"},
+			},
+		},
+		WiseCloud: &Component{
+			Hosts: []*database.Host{
+				&database.Host{IP: "192.168.0.101"},
+			},
+		},
 	}
 
-	if err := PreparePlaybooks("/home/mian/workspace/k8s/", ds); err != nil {
+	if err := PreparePlaybooks("/home/mian/workspace/wise2c-playbook/", ds); err != nil {
 		t.Error(err)
 	}
 }

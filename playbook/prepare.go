@@ -12,39 +12,6 @@ import (
 	"github.com/golang/glog"
 )
 
-type K8sNode struct {
-	Wise2cController []string `yaml:"wise2cController"`
-	Normal           []string `yaml:"normal"`
-}
-
-type Hosts struct {
-	Etcd         []string `yaml:"etcd"`
-	K8sMaster    []string `yaml:"k8sMaster"`
-	K8sNode      K8sNode  `yaml:"k8sNode"`
-	LoadBalancer []string `yaml:"loadBalancer"`
-	Registry     []string `yaml:"registry"`
-	MysqlMaster  string   `yaml:"mysqlMaster"`
-	MysqlSlave1  string   `yaml:"mysqlSlave1"`
-	MysqlSlave2  string   `yaml:"mysqlSlave2"`
-	Distincts    []string `yaml:"-" json:"-"`
-}
-
-type Vips struct {
-	Interface string
-	NetMask   int `yaml:"netMask"`
-	K8s       string
-	Es        string
-	Registry  string `yaml:"registry"`
-	Other     string
-}
-
-type DeploySeed struct {
-	Hosts Hosts
-	// Templates []*Template `yaml:"-" json:"-"`
-	Vips Vips
-	Step []string
-}
-
 // Template src is template path and dest is template output file
 type Template struct {
 	Src  string `json:"-"`
@@ -52,10 +19,11 @@ type Template struct {
 }
 
 const (
+	//PlaybookSuffix - suffix for playbook folder
 	PlaybookSuffix  = "-playbook"
 	ansibleGroupDir = "group_vars"
 	hostsTmpl       = "hosts.gotmpl"
-	HostsFile       = "hosts"
+	hostsFile       = "hosts"
 	tmplDir         = "yat"
 	tmplSuffix      = ".gotmpl"
 )
@@ -130,7 +98,7 @@ func getTemplatePath(name string) ([]*Template, error) {
 		if f.Name() == hostsTmpl {
 			t := &Template{
 				Src:  path.Join(name, tmplDir, f.Name()),
-				Dest: path.Join(name, HostsFile),
+				Dest: path.Join(name, hostsFile),
 			}
 			tps = append(tps, t)
 		} else {
