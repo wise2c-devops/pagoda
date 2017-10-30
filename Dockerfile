@@ -5,5 +5,6 @@ VOLUME [ "/deploy" ]
 
 COPY wise-deploy /root
 COPY table.sql /root
+COPY favicon.ico /root
 
 ENTRYPOINT [ "bash", "-c", "/root/entrypoint.sh &\n /root/wise-deploy -logtostderr -v 4 -w /workspace" ]
