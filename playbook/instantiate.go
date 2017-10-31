@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	ansibleFolder = []string{
+	ansibleFile = []string{
 		"file",
 		"template",
 		"scripts",
@@ -57,18 +57,18 @@ func InstantiateCluster(wd string, cluster *database.Cluster) error {
 			return err
 		}
 
-		for _, folder := range ansibleFolder {
+		for _, f := range ansibleFile {
 			p := path.Join(
 				"cluster-template",
 				com.Name+PlaybookSuffix,
-				folder,
+				f,
 			)
 
 			if _, err := os.Stat(p); os.IsNotExist(err) {
-				glog.Errorf("%s's %s folder is not exist", com.Name, folder)
+				glog.Errorf("%s's %s folder is not exist", com.Name, f)
 				continue
 			} else {
-				glog.Errorf("check %s's %s folder error: %v", com.Name, folder, err)
+				glog.Errorf("check %s's %s folder error: %v", com.Name, f, err)
 			}
 
 			if err := os.Symlink(
@@ -76,7 +76,7 @@ func InstantiateCluster(wd string, cluster *database.Cluster) error {
 				path.Join(
 					newFolder,
 					com.Name+PlaybookSuffix,
-					folder,
+					f,
 				),
 			); err != nil {
 				return err
