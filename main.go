@@ -56,11 +56,11 @@ func main() {
 		for k := range ComponentMap {
 			r.Group("/v1").StaticFile(
 				fmt.Sprintf(
-					"/components/%s/property",
+					"/components/%s/properties",
 					k,
 				),
 				fmt.Sprintf(
-					"/%s/%s-playbook/file/property.yaml",
+					"/%s/%s-playbook/file/properties.json",
 					*workDir,
 					k,
 				),

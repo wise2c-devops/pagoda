@@ -35,7 +35,7 @@ func PreparePlaybooks(dir string, ds *DeploySeed2) error {
 	}
 
 	for _, f := range files {
-		glog.V(3).Infof("file %s have mode %s", f.Name(), f.Mode().String())
+		glog.V(4).Infof("file %s have mode %s", f.Name(), f.Mode().String())
 		if f.IsDir() && strings.HasSuffix(f.Name(), PlaybookSuffix) {
 			if err = preparePlaybook(path.Join(dir, f.Name()), ds); err != nil {
 				return err
