@@ -66,8 +66,8 @@ func (d *DeploySeed2) MySQLEndpoint() string {
 }
 
 func (d *DeploySeed2) K8sEndpoint() string {
-	if otherVip, find := d.LoadBalancer.Property["other_vip"]; find {
-		return otherVip.(string)
+	if k8sVip, find := d.LoadBalancer.Property["k8s_vip"]; find {
+		return k8sVip.(string)
 	}
 
 	if len(d.K8sMaster.Hosts) > 0 {
