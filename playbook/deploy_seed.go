@@ -18,9 +18,8 @@ type DeploySeed2 struct {
 }
 
 func (d *DeploySeed2) EsEndpoint() string {
-	ip := d.LoadBalancer.getEndpoint("es")
-	if ip != "" {
-		return ip
+	if esVip, find := d.LoadBalancer.Property["es_vip"]; find {
+		return esVip.(string)
 	}
 
 	if len(d.K8sNode.Hosts) > 0 {
@@ -31,9 +30,8 @@ func (d *DeploySeed2) EsEndpoint() string {
 }
 
 func (d *DeploySeed2) OtherEndpoint() string {
-	ip := d.LoadBalancer.getEndpoint("other")
-	if ip != "" {
-		return ip
+	if otherVip, find := d.LoadBalancer.Property["other_vip"]; find {
+		return otherVip.(string)
 	}
 
 	if len(d.K8sNode.Hosts) > 0 {
@@ -44,9 +42,8 @@ func (d *DeploySeed2) OtherEndpoint() string {
 }
 
 func (d *DeploySeed2) RegistryEndpoint() string {
-	ip := d.LoadBalancer.getEndpoint("registry")
-	if ip != "" {
-		return ip
+	if registryVip, find := d.LoadBalancer.Property["registry_vip"]; find {
+		return registryVip.(string)
 	}
 
 	if len(d.Registry.Hosts) > 0 {
@@ -57,9 +54,8 @@ func (d *DeploySeed2) RegistryEndpoint() string {
 }
 
 func (d *DeploySeed2) MySQLEndpoint() string {
-	ip := d.LoadBalancer.getEndpoint("mysql")
-	if ip != "" {
-		return ip
+	if mysqlVip, find := d.LoadBalancer.Property["mysql_vip"]; find {
+		return mysqlVip.(string)
 	}
 
 	if len(d.MySQL.Hosts) > 0 {
@@ -70,9 +66,8 @@ func (d *DeploySeed2) MySQLEndpoint() string {
 }
 
 func (d *DeploySeed2) K8sEndpoint() string {
-	ip := d.LoadBalancer.getEndpoint("k8s")
-	if ip != "" {
-		return ip
+	if otherVip, find := d.LoadBalancer.Property["other_vip"]; find {
+		return otherVip.(string)
 	}
 
 	if len(d.K8sMaster.Hosts) > 0 {
