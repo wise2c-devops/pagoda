@@ -1,6 +1,7 @@
 package main
 
 import "gitee.com/wisecloud/wise-deploy/database"
+import "reflect"
 
 var (
 	ComponentMap = map[string]int{
@@ -41,6 +42,7 @@ func NewComponent(clusterID string, cp *database.Component) (*Component, error) 
 		Hosts:    make([]*database.Host, 0, len(cp.Hosts)),
 	}
 
+	hmap := make(map[string]*database.Host)
 	for _, h := range cp.Hosts {
 		hh, err := database.Instance(sqlConfig).RetrieveHost(clusterID, h)
 		if err != nil {
@@ -48,6 +50,20 @@ func NewComponent(clusterID string, cp *database.Component) (*Component, error) 
 		}
 
 		c.Hosts = append(c.Hosts, hh)
+		hmap[h] = hh
+	}
+
+	for k, v := range cp.Property {
+		if t := reflect.TypeOf(v); t.Kind() != reflect.Slice {
+			continue
+		}
+
+		hosts := v.([]interface{})
+
+		for _, ih := range hosts {
+			h := ih.(string)
+			c.Property[k] = hmap[h]
+		}
 	}
 
 	return c, nil

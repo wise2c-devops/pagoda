@@ -48,7 +48,7 @@ func main() {
 	config.AllowMethods = append(config.AllowMethods, "DELETE")
 	config.AllowAllOrigins = true
 	r.Use(cors.New(config))
-	r.StaticFile("/favicon.ico", "favicon.ico")
+	r.StaticFile("/favicon.ico", "/root/favicon.ico")
 
 	v1 := r.Group("/v1")
 

@@ -36,7 +36,7 @@ func NewClusterRuntime() *ClusterRuntime {
 	return &ClusterRuntime{
 		cluster:          make(map[string]*ClusterStatus),
 		mux:              &sync.Mutex{},
-		notificationChan: make(chan *database.Notification),
+		notificationChan: make(chan *database.Notification, 5),
 		wsChans:          make(map[string]chan *database.Notification),
 		registeChan:      make(chan *notifyChannel),
 		unregisteChan:    make(chan string),

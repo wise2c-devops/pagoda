@@ -50,7 +50,7 @@ func NewEngine(config *EngineConfig) (*SQLEngine, error) {
 
 	e.xe.ShowSQL(config.ShowSQL)
 	e.xe.ShowExecTime(config.ShowExecTime)
-	_, err := e.xe.ImportFile("./table.sql")
+	_, err := e.xe.ImportFile("/root/table.sql")
 	return e, err
 }
 
