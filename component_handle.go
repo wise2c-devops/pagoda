@@ -11,7 +11,7 @@ import (
 func retrieveComponents(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 
-	cs, err := database.Instance(sqlConfig).RetrieveComponents(clusterID)
+	cs, err := database.Default().RetrieveComponents(clusterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -45,7 +45,7 @@ func createComponent(c *gin.Context) {
 		return
 	}
 
-	err := database.Instance(sqlConfig).CreateComponent(clusterID, cp)
+	err := database.Default().CreateComponent(clusterID, cp)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -66,7 +66,7 @@ func deleteComponent(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 	componentID := c.Param("component_id")
 
-	err := database.Instance(sqlConfig).DeleteComponent(clusterID, componentID)
+	err := database.Default().DeleteComponent(clusterID, componentID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -95,7 +95,7 @@ func updateComponent(c *gin.Context) {
 		return
 	}
 
-	err := database.Instance(sqlConfig).UpdateComponent(clusterID, cp)
+	err := database.Default().UpdateComponent(clusterID, cp)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -116,7 +116,7 @@ func retrieveComponent(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 	componentID := c.Param("component_id")
 
-	cp, err := database.Instance(sqlConfig).RetrieveComponent(clusterID, componentID)
+	cp, err := database.Default().RetrieveComponent(clusterID, componentID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

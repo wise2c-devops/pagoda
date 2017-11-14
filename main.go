@@ -8,6 +8,7 @@ import (
 
 	"gitee.com/wisecloud/wise-deploy/database"
 	"gitee.com/wisecloud/wise-deploy/playbook"
+	"gitee.com/wisecloud/wise-deploy/runtime"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -22,16 +23,10 @@ var (
 		},
 	}
 	ansibleChan    = make(chan *database.Notification, 5)
-	commands       = NewCommands()
-	clusterRuntime = NewClusterRuntime()
+	commands       = runtime.NewCommands()
+	clusterRuntime = runtime.NewClusterRuntime()
 
 	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
-
-	sqlConfig = &database.EngineConfig{
-		SQLType:      "sqlite3",
-		ShowSQL:      false,
-		ShowExecTime: true,
-	}
 )
 
 func init() {
@@ -53,7 +48,7 @@ func main() {
 	v1 := r.Group("/v1")
 
 	{
-		for k := range ComponentMap {
+		for k := range runtime.ComponentMap {
 			r.Group("/v1").StaticFile(
 				fmt.Sprintf(
 					"/components/%s/properties",
@@ -111,7 +106,7 @@ func install(c *gin.Context) {
 
 	clusterID := c.Param("cluster_id")
 
-	cluster, err := database.Instance(sqlConfig).RetrieveCluster(clusterID)
+	cluster, err := database.Default().RetrieveCluster(clusterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -153,7 +148,7 @@ func install(c *gin.Context) {
 	}
 
 	cluster.State = database.Processing
-	err = database.Instance(sqlConfig).UpdateCluster(cluster)
+	err = database.Default().UpdateCluster(cluster)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

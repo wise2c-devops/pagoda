@@ -1,4 +1,4 @@
-package main
+package runtime
 
 import (
 	"fmt"
@@ -8,6 +8,18 @@ import (
 	"gitee.com/wisecloud/wise-deploy/database"
 	"github.com/golang/glog"
 )
+
+type ByName []string
+
+func (s ByName) Len() int {
+	return len(s)
+}
+func (s ByName) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s ByName) Less(i, j int) bool {
+	return ComponentMap[s[i]] < ComponentMap[s[j]]
+}
 
 type notifyChannel struct {
 	name string
@@ -55,7 +67,7 @@ func (cr *ClusterRuntime) ProcessCluster(c *database.Cluster) {
 		Stages: sc,
 	}
 
-	database.Instance(sqlConfig).DeleteLogs(c.ID)
+	database.Default().DeleteLogs(c.ID)
 
 	cr.mux.Lock()
 	defer cr.mux.Unlock()
@@ -121,7 +133,7 @@ func (cr *ClusterRuntime) Unregiste(name string) {
 }
 
 func (cr *ClusterRuntime) Notify(c *database.Cluster, n *database.Notification) {
-	if err := database.Instance(sqlConfig).CreateLog(c.ID, n); err != nil {
+	if err := database.Default().CreateLog(c.ID, n); err != nil {
 		glog.Error(err)
 	}
 

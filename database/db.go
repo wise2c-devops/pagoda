@@ -22,7 +22,17 @@ type EngineConfig struct {
 
 var (
 	i *SQLEngine
+
+	sqlConfig = &EngineConfig{
+		SQLType:      "sqlite3",
+		ShowSQL:      false,
+		ShowExecTime: true,
+	}
 )
+
+func Default() *SQLEngine {
+	return Instance(sqlConfig)
+}
 
 func Instance(config *EngineConfig) *SQLEngine {
 	if i == nil {

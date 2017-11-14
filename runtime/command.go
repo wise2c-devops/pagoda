@@ -1,4 +1,4 @@
-package main
+package runtime
 
 import (
 	"fmt"
@@ -28,6 +28,18 @@ const (
 	k8sMaster    = "k8smaster"
 	k8sNode      = "k8snode"
 	wisecloud    = "wisecloud"
+)
+
+var (
+	ComponentMap = map[string]int{
+		"registry":     0,
+		"etcd":         1,
+		"mysql":        2,
+		"loadbalancer": 3,
+		"k8smaster":    4,
+		"k8snode":      5,
+		"wisecloud":    6,
+	}
 )
 
 var (
@@ -72,13 +84,13 @@ func NewCommands() *Commands {
 func (c *Commands) Launch(w string) {
 	for {
 		select {
-		case n := <-ansibleChan:
-			if c.currentIndex == -1 {
-				glog.Error("received a improper notify")
-				break
-			}
-			n.Stage = c.received[c.currentIndex]
-			clusterRuntime.Notify(c.cluster, n)
+		// case n := <-ansibleChan:
+		// 	if c.currentIndex == -1 {
+		// 		glog.Error("received a improper notify")
+		// 		break
+		// 	}
+		// 	n.Stage = c.received[c.currentIndex]
+		// 	clusterRuntime.Notify(c.cluster, n)
 		case <-c.stopChan:
 			c.complete(stopped)
 		case next := <-c.nextChan:
@@ -89,7 +101,7 @@ func (c *Commands) Launch(w string) {
 					break
 				}
 				c.run(w)
-				clusterRuntime.RotateStage(c.cluster.ID, c.received[c.currentIndex])
+				// clusterRuntime.RotateStage(c.cluster.ID, c.received[c.currentIndex])
 			} else {
 				c.complete(failed)
 			}
@@ -97,12 +109,12 @@ func (c *Commands) Launch(w string) {
 			c.cluster = rec
 			c.ansibleFile = "install.ansible"
 			c.nextChan <- true
-			clusterRuntime.ProcessCluster(c.cluster)
+			// clusterRuntime.ProcessCluster(c.cluster)
 		case rec := <-c.resetChan:
 			c.cluster = rec
 			c.ansibleFile = "clean.ansible"
 			c.nextChan <- true
-			clusterRuntime.ProcessCluster(c.cluster)
+			// clusterRuntime.ProcessCluster(c.cluster)
 		}
 	}
 }
@@ -172,7 +184,7 @@ func (c *Commands) complete(code CompleteCode) {
 		glog.V(3).Info("failed at a step")
 	}
 
-	err := database.Instance(sqlConfig).UpdateCluster(c.cluster)
+	err := database.Default().UpdateCluster(c.cluster)
 	if err != nil {
 		glog.Errorf("update cluster %s error %v", c.cluster.ID, err)
 		return
@@ -183,5 +195,5 @@ func (c *Commands) complete(code CompleteCode) {
 	}
 	glog.V(3).Info("finish a install/reset")
 	c.currentIndex = -1
-	clusterRuntime.RmCluster(c.cluster.ID)
+	// clusterRuntime.RmCluster(c.cluster.ID)
 }
