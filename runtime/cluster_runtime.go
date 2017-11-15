@@ -142,6 +142,7 @@ func (cr *ClusterRuntime) Notify(c *database.Cluster, n *database.Notification) 
 	default:
 		glog.Errorf("notify fail %s", n.Stage)
 	}
+	//TODO: set cluster status to Notification's stage
 }
 
 func (cr *ClusterRuntime) Run() {

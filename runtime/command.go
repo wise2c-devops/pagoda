@@ -32,13 +32,13 @@ const (
 
 var (
 	ComponentMap = map[string]int{
-		"registry":     0,
-		"etcd":         1,
-		"mysql":        2,
-		"loadbalancer": 3,
-		"k8smaster":    4,
-		"k8snode":      5,
-		"wisecloud":    6,
+		registry:     0,
+		etcd:         1,
+		mysql:        2,
+		loadbalancer: 3,
+		k8sMaster:    4,
+		k8sNode:      5,
+		wisecloud:    6,
 	}
 )
 
