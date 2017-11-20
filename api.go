@@ -437,7 +437,11 @@ package main
 * @apiParamExample  {type} Request-Example:
   http://172.20.20.1:8080/v1/clusters/1/deployment
   {
-    "operation": "install/reset"
+    "operation": "install/reset",
+    "components": [
+      "registry",
+      "etcd"
+    ]
   }
 *
 *

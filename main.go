@@ -31,7 +31,7 @@ var (
 
 func init() {
 	flag.Parse()
-	go commands.Launch(*workDir)
+	go commands.Launch(*workDir, clusterRuntime)
 	go clusterRuntime.Run()
 }
 
@@ -96,7 +96,7 @@ func main() {
 }
 
 func install(c *gin.Context) {
-	op := make(map[string]string)
+	op := &runtime.LaunchParameters{}
 	if err := c.BindJSON(&op); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -122,17 +122,10 @@ func install(c *gin.Context) {
 		return
 	}
 
-	o, ok := op["operation"]
-	if !ok {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{
-			"error": "please give me a operation",
-		})
-		return
-	}
-	if o == "install" {
-		commands.Install(cluster)
-	} else if o == "reset" {
-		commands.Reset(cluster)
+	if op.Operation == "install" {
+		commands.Install(cluster, op)
+	} else if op.Operation == "reset" {
+		commands.Reset(cluster, op)
 	} else {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": "please give me a right operation",
@@ -176,10 +169,7 @@ func notify(c *gin.Context) {
 	}
 
 	glog.V(4).Info(config)
-	select {
-	case ansibleChan <- config:
-	default:
-	}
+	clusterRuntime.Notify(commands.Cluster, config)
 
 	c.Status(http.StatusOK)
 }

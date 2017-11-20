@@ -55,6 +55,11 @@ var (
 	}
 )
 
+type LaunchParameters struct {
+	Operation  string   `json:"operation"`
+	Components []string `json:"components"`
+}
+
 type Commands struct {
 	received     []string
 	currentIndex int
@@ -65,7 +70,9 @@ type Commands struct {
 	installChan  chan *database.Cluster
 	resetChan    chan *database.Cluster
 	ansibleFile  string
-	cluster      *database.Cluster
+	Cluster      *database.Cluster
+
+	runtime *ClusterRuntime
 }
 
 func NewCommands() *Commands {
@@ -81,7 +88,9 @@ func NewCommands() *Commands {
 	}
 }
 
-func (c *Commands) Launch(w string) {
+func (c *Commands) Launch(w string, runtime *ClusterRuntime) {
+	c.runtime = runtime
+
 	for {
 		select {
 		// case n := <-ansibleChan:
@@ -101,20 +110,20 @@ func (c *Commands) Launch(w string) {
 					break
 				}
 				c.run(w)
-				// clusterRuntime.RotateStage(c.cluster.ID, c.received[c.currentIndex])
+				c.runtime.RotateStage(c.Cluster.ID, c.received[c.currentIndex])
 			} else {
 				c.complete(failed)
 			}
 		case rec := <-c.installChan:
-			c.cluster = rec
+			c.Cluster = rec
 			c.ansibleFile = "install.ansible"
 			c.nextChan <- true
-			// clusterRuntime.ProcessCluster(c.cluster)
+			c.runtime.ProcessCluster(c.Cluster)
 		case rec := <-c.resetChan:
-			c.cluster = rec
+			c.Cluster = rec
 			c.ansibleFile = "clean.ansible"
 			c.nextChan <- true
-			// clusterRuntime.ProcessCluster(c.cluster)
+			c.runtime.ProcessCluster(c.Cluster)
 		}
 	}
 }
@@ -128,13 +137,15 @@ func (c *Commands) Process() error {
 	}
 }
 
-func (c *Commands) Install(cluster *database.Cluster) {
+func (c *Commands) Install(cluster *database.Cluster, config *LaunchParameters) {
 	glog.V(3).Infof("begin to install cluster %s", cluster.Name)
+	c.received = config.Components
 	c.installChan <- cluster
 }
 
-func (c *Commands) Reset(cluster *database.Cluster) {
+func (c *Commands) Reset(cluster *database.Cluster, config *LaunchParameters) {
 	glog.V(3).Infof("begin to reset cluster %s", cluster.Name)
+	c.received = config.Components
 	c.resetChan <- cluster
 }
 
@@ -168,25 +179,25 @@ func (c *Commands) run(w string) {
 func (c *Commands) complete(code CompleteCode) {
 	switch code {
 	case finished:
-		c.cluster.State = database.Success
+		c.Cluster.State = database.Success
 		glog.V(3).Info("complete all install step")
 	case stopped:
-		if c.cluster == nil {
+		if c.Cluster == nil {
 			glog.Warning("receive a stop but I haven't start")
 			return
 		}
-		c.cluster.State = database.Failed
+		c.Cluster.State = database.Failed
 		if err := c.currentCmd.Process.Kill(); err != nil {
 			glog.Errorf("stop install error: %v", err)
 		}
 	case failed:
-		c.cluster.State = database.Failed
+		c.Cluster.State = database.Failed
 		glog.V(3).Info("failed at a step")
 	}
 
-	err := database.Default().UpdateCluster(c.cluster)
+	err := database.Default().UpdateCluster(c.Cluster)
 	if err != nil {
-		glog.Errorf("update cluster %s error %v", c.cluster.ID, err)
+		glog.Errorf("update cluster %s error %v", c.Cluster.ID, err)
 		return
 	}
 	select {
