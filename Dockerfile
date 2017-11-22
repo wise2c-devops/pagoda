@@ -1,4 +1,4 @@
-FROM registry.cn-hangzhou.aliyuncs.com/wise2c/deploy-ui:v0.1
+FROM registry.cn-hangzhou.aliyuncs.com/wise2c-dev/deploy-ui:v0.2
 
 WORKDIR /deploy
 VOLUME [ "/deploy" ]

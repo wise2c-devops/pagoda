@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path"
+	"sort"
 
 	"gitee.com/wisecloud/wise-deploy/database"
 	"gitee.com/wisecloud/wise-deploy/playbook"
@@ -42,19 +43,6 @@ var (
 	}
 )
 
-var (
-	step = []string{
-		initHost,
-		registry,
-		etcd,
-		mysql,
-		loadbalancer,
-		k8sMaster,
-		k8sNode,
-		wisecloud,
-	}
-)
-
 type LaunchParameters struct {
 	Operation  string   `json:"operation"`
 	Components []string `json:"components"`
@@ -78,7 +66,6 @@ type Commands struct {
 func NewCommands() *Commands {
 	return &Commands{
 		currentIndex: -1,
-		received:     step,
 		stopChan:     make(chan bool),
 		nextChan:     make(chan bool, 1), //the length must be one
 		processChan:  make(chan bool, 1), //the length must be one
@@ -116,7 +103,6 @@ func (c *Commands) Launch(w string, runtime *ClusterRuntime) {
 			}
 		case rec := <-c.installChan:
 			c.Cluster = rec
-			c.ansibleFile = "install.ansible"
 			c.nextChan <- true
 			c.runtime.ProcessCluster(c.Cluster)
 		case rec := <-c.resetChan:
@@ -137,16 +123,26 @@ func (c *Commands) Process() error {
 	}
 }
 
+func (c *Commands) start(cluster *database.Cluster, config *LaunchParameters) {
+	sort.Sort(ByName(config.Components))
+	c.received = config.Components
+	c.Cluster = cluster
+	c.nextChan <- true
+	c.runtime.ProcessCluster(c.Cluster)
+}
+
 func (c *Commands) Install(cluster *database.Cluster, config *LaunchParameters) {
 	glog.V(3).Infof("begin to install cluster %s", cluster.Name)
-	c.received = config.Components
-	c.installChan <- cluster
+
+	c.ansibleFile = "install.ansible"
+	c.start(cluster, config)
 }
 
 func (c *Commands) Reset(cluster *database.Cluster, config *LaunchParameters) {
 	glog.V(3).Infof("begin to reset cluster %s", cluster.Name)
-	c.received = config.Components
-	c.resetChan <- cluster
+
+	c.ansibleFile = "clean.ansible"
+	c.start(cluster, config)
 }
 
 func (c *Commands) Stop() {
@@ -154,33 +150,34 @@ func (c *Commands) Stop() {
 }
 
 func (c *Commands) run(w string) {
-	for ; c.currentIndex < len(c.received); c.currentIndex++ {
-		step := c.received[c.currentIndex]
-		cmd := exec.Command("ansible-playbook", c.ansibleFile)
-		cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix)
-		c.currentCmd = cmd
+	step := c.received[c.currentIndex]
+	cmd := exec.Command("ansible-playbook", c.ansibleFile)
+	cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix)
+	c.currentCmd = cmd
 
-		go func() {
-			glog.V(3).Infof("start step %s", step)
-			err := cmd.Run()
-			if err != nil {
-				glog.V(3).Infof("step %s failed ", step)
-				c.nextChan <- false
-			} else {
-				glog.V(3).Infof("step %s compeleted", step)
-				c.nextChan <- true
-			}
-		}()
-
-		return
-	}
+	go func() {
+		glog.V(3).Infof("start step %s", step)
+		err := cmd.Run()
+		if err != nil {
+			glog.V(3).Infof("step %s failed ", step)
+			c.nextChan <- false
+		} else {
+			glog.V(3).Infof("step %s compeleted", step)
+			c.nextChan <- true
+		}
+	}()
 }
 
 func (c *Commands) complete(code CompleteCode) {
 	switch code {
 	case finished:
-		c.Cluster.State = database.Success
-		glog.V(3).Info("complete all install step")
+		if c.ansibleFile == "install.ansible" {
+			c.Cluster.State = database.Success
+			glog.V(3).Info("complete all install step")
+		} else if c.ansibleFile == "clean.ansible" {
+			c.Cluster.State = database.Initial
+			glog.V(3).Info("complete all reset step")
+		}
 	case stopped:
 		if c.Cluster == nil {
 			glog.Warning("receive a stop but I haven't start")
@@ -206,5 +203,5 @@ func (c *Commands) complete(code CompleteCode) {
 	}
 	glog.V(3).Info("finish a install/reset")
 	c.currentIndex = -1
-	// clusterRuntime.RmCluster(c.cluster.ID)
+	c.runtime.RmCluster(c.Cluster.ID)
 }
