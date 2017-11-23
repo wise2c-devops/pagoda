@@ -44,8 +44,9 @@ var (
 )
 
 type LaunchParameters struct {
-	Operation  string   `json:"operation"`
-	Components []string `json:"components"`
+	Operation  string            `json:"operation"`
+	Components []string          `json:"components"`
+	Clster     *database.Cluster `json:"-"`
 }
 
 type Commands struct {
@@ -55,8 +56,7 @@ type Commands struct {
 	stopChan     chan bool
 	nextChan     chan bool
 	processChan  chan bool
-	installChan  chan *database.Cluster
-	resetChan    chan *database.Cluster
+	startChan    chan *LaunchParameters
 	ansibleFile  string
 	Cluster      *database.Cluster
 
@@ -69,8 +69,7 @@ func NewCommands() *Commands {
 		stopChan:     make(chan bool),
 		nextChan:     make(chan bool, 1), //the length must be one
 		processChan:  make(chan bool, 1), //the length must be one
-		installChan:  make(chan *database.Cluster),
-		resetChan:    make(chan *database.Cluster),
+		startChan:    make(chan *LaunchParameters),
 		currentCmd:   nil,
 	}
 }
@@ -101,20 +100,13 @@ func (c *Commands) Launch(w string, runtime *ClusterRuntime) {
 			} else {
 				c.complete(failed)
 			}
-		case rec := <-c.installChan:
-			c.Cluster = rec
-			c.nextChan <- true
-			c.runtime.ProcessCluster(c.Cluster)
-		case rec := <-c.resetChan:
-			c.Cluster = rec
-			c.ansibleFile = "clean.ansible"
-			c.nextChan <- true
-			c.runtime.ProcessCluster(c.Cluster)
+		case rec := <-c.startChan:
+			c.start(rec)
 		}
 	}
 }
 
-func (c *Commands) Process() error {
+func (c *Commands) process() error {
 	select {
 	case c.processChan <- true:
 		return nil
@@ -123,26 +115,40 @@ func (c *Commands) Process() error {
 	}
 }
 
-func (c *Commands) start(cluster *database.Cluster, config *LaunchParameters) {
+func (c *Commands) unProcess() error {
+	select {
+	case <-c.processChan:
+		return nil
+	default:
+		return fmt.Errorf("I have processed a action")
+	}
+}
+
+func (c *Commands) start(config *LaunchParameters) {
 	sort.Sort(ByName(config.Components))
 	c.received = config.Components
-	c.Cluster = cluster
+	c.Cluster = config.Clster
+
+	if config.Operation == "install" {
+		c.ansibleFile = "install.ansible"
+	} else {
+		c.ansibleFile = "clean.ansible"
+	}
+
 	c.nextChan <- true
 	c.runtime.ProcessCluster(c.Cluster)
 }
 
-func (c *Commands) Install(cluster *database.Cluster, config *LaunchParameters) {
+func (c *Commands) Install(cluster *database.Cluster, config *LaunchParameters) error {
+	if err := c.process(); err != nil {
+		return err
+	}
 	glog.V(3).Infof("begin to install cluster %s", cluster.Name)
 
-	c.ansibleFile = "install.ansible"
-	c.start(cluster, config)
-}
+	config.Clster = cluster
+	c.startChan <- config
 
-func (c *Commands) Reset(cluster *database.Cluster, config *LaunchParameters) {
-	glog.V(3).Infof("begin to reset cluster %s", cluster.Name)
-
-	c.ansibleFile = "clean.ansible"
-	c.start(cluster, config)
+	return nil
 }
 
 func (c *Commands) Stop() {
@@ -197,10 +203,8 @@ func (c *Commands) complete(code CompleteCode) {
 		glog.Errorf("update cluster %s error %v", c.Cluster.ID, err)
 		return
 	}
-	select {
-	case <-c.processChan:
-	default:
-	}
+	c.unProcess()
+
 	glog.V(3).Info("finish a install/reset")
 	c.currentIndex = -1
 	c.runtime.RmCluster(c.Cluster.ID)

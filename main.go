@@ -122,19 +122,8 @@ func install(c *gin.Context) {
 		return
 	}
 
-	if op.Operation == "install" {
-		commands.Install(cluster, op)
-	} else if op.Operation == "reset" {
-		commands.Reset(cluster, op)
-	} else {
+	if err := commands.Install(cluster, op); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
-			"error": "please give me a right operation",
-		})
-		return
-	}
-
-	if err = commands.Process(); err != nil {
-		c.IndentedJSON(http.StatusForbidden, gin.H{
 			"error": err.Error(),
 		})
 		return
