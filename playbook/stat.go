@@ -1,8 +1,10 @@
 package playbook
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"path"
 	"strings"
 )
 
@@ -24,4 +26,18 @@ func getVersion(path string) ([]string, error) {
 	}
 
 	return versions, nil
+}
+
+func getInherentProperties(dir string) (map[string]interface{}, error) {
+	bs, err := ioutil.ReadFile(path.Join(dir, "inherent.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	value := make(map[string]interface{})
+	if err := json.Unmarshal(bs, &value); err != nil {
+		return nil, err
+	}
+
+	return value, nil
 }

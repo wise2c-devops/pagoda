@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"path"
 
 	"gitee.com/wisecloud/wise-deploy/database"
 	"gitee.com/wisecloud/wise-deploy/playbook"
@@ -48,19 +49,7 @@ func main() {
 	v1 := r.Group("/v1")
 
 	{
-		for k := range runtime.ComponentMap {
-			r.Group("/v1").StaticFile(
-				fmt.Sprintf(
-					"/components/%s/properties",
-					k,
-				),
-				fmt.Sprintf(
-					"/%s/%s-playbook/file/properties.json",
-					*workDir,
-					k,
-				),
-			)
-		}
+		v1.GET("/components/:components/:version/properties", properties)
 
 		v1.GET("/clusters", retrieveClusters)
 		v1.POST("/clusters", createCluster)
@@ -93,6 +82,25 @@ func main() {
 
 	// Listen and Server in 0.0.0.0:8080
 	r.Run("0.0.0.0:8080")
+}
+
+func properties(c *gin.Context) {
+	component := c.Param("component")
+	version := c.Param("version")
+	c.Header("Content-Type", "application/json; charset=utf-8")
+
+	http.ServeFile(
+		c.Writer,
+		c.Request,
+		path.Join(
+			*workDir,
+			fmt.Sprintf(
+				"%s-playbook/file/%s/properties.json",
+				component,
+				version,
+			),
+		),
+	)
 }
 
 func install(c *gin.Context) {
