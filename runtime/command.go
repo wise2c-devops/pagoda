@@ -21,6 +21,13 @@ const (
 )
 
 const (
+	installFile      = "install.ansible"
+	cleanFile        = "clean.ansible"
+	installOperation = "install"
+	resetOperation   = "reset"
+)
+
+const (
 	initHost     = "init"
 	registry     = "registry"
 	etcd         = "etcd"
@@ -125,16 +132,17 @@ func (c *Commands) unProcess() error {
 }
 
 func (c *Commands) start(config *LaunchParameters) {
+	if config.Operation == installOperation {
+		c.ansibleFile = installFile
+	} else if config.Operation == resetOperation {
+		c.ansibleFile = cleanFile
+	} else {
+		return
+	}
+
 	sort.Sort(ByName(config.Components))
 	c.received = config.Components
 	c.Cluster = config.Clster
-
-	if config.Operation == "install" {
-		c.ansibleFile = "install.ansible"
-	} else {
-		c.ansibleFile = "clean.ansible"
-	}
-
 	c.nextChan <- true
 	c.runtime.ProcessCluster(c.Cluster)
 }
@@ -177,10 +185,10 @@ func (c *Commands) run(w string) {
 func (c *Commands) complete(code CompleteCode) {
 	switch code {
 	case finished:
-		if c.ansibleFile == "install.ansible" {
+		if c.ansibleFile == installFile {
 			c.Cluster.State = database.Success
 			glog.V(3).Info("complete all install step")
-		} else if c.ansibleFile == "clean.ansible" {
+		} else if c.ansibleFile == cleanFile {
 			c.Cluster.State = database.Initial
 			glog.V(3).Info("complete all reset step")
 		}
@@ -205,7 +213,6 @@ func (c *Commands) complete(code CompleteCode) {
 	}
 	c.unProcess()
 
-	glog.V(3).Info("finish a install/reset")
 	c.currentIndex = -1
 	c.runtime.RmCluster(c.Cluster.ID)
 }
