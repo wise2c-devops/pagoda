@@ -1,7 +1,7 @@
 package playbook
 
 import (
-	"fmt"
+	"path"
 
 	"gitee.com/wisecloud/wise-deploy/database"
 )
@@ -17,77 +17,73 @@ type DeploySeed2 struct {
 	Hosts        []*database.Host
 }
 
-func (d *DeploySeed2) EsEndpoint() string {
-	if esVip, find := d.LoadBalancer.Property["es_vip"]; find {
-		return esVip.(string)
-	}
+// func (d *DeploySeed2) EsEndpoint() string {
+// 	if esVip, find := d.LoadBalancer.Property["es_vip"]; find {
+// 		return esVip.(string)
+// 	}
 
-	if len(d.K8sNode.Hosts) > 0 {
-		return d.K8sNode.Hosts[0].IP
-	}
+// 	if len(d.K8sNode.Hosts) > 0 {
+// 		return d.K8sNode.Hosts[0].IP
+// 	}
 
-	return ""
-}
+// 	return ""
+// }
 
-func (d *DeploySeed2) OtherEndpoint() string {
-	if otherVip, find := d.LoadBalancer.Property["other_vip"]; find {
-		return otherVip.(string)
-	}
+// func (d *DeploySeed2) OtherEndpoint() string {
+// 	if otherVip, find := d.LoadBalancer.Property["other_vip"]; find {
+// 		return otherVip.(string)
+// 	}
 
-	if len(d.K8sNode.Hosts) > 0 {
-		return d.K8sNode.Hosts[0].IP
-	}
+// 	if len(d.K8sNode.Hosts) > 0 {
+// 		return d.K8sNode.Hosts[0].IP
+// 	}
 
-	return "192.168.0.1"
-}
+// 	return "192.168.0.1"
+// }
 
-func (d *DeploySeed2) RegistryEndpoint() string {
-	if registryVip, find := d.LoadBalancer.Property["registry_vip"]; find {
-		return registryVip.(string)
-	}
+// func (d *DeploySeed2) RegistryEndpoint() string {
+// 	if registryVip, find := d.LoadBalancer.Property["registry_vip"]; find {
+// 		return registryVip.(string)
+// 	}
 
-	if len(d.Registry.Hosts) > 0 {
-		return d.Registry.Hosts[0].IP
-	}
+// 	if len(d.Registry.Hosts) > 0 {
+// 		return d.Registry.Hosts[0].IP
+// 	}
 
-	return ""
-}
+// 	return ""
+// }
 
-func (d *DeploySeed2) MySQLEndpoint() string {
-	if mysqlVip, find := d.LoadBalancer.Property["mysql_vip"]; find {
-		return mysqlVip.(string)
-	}
+// func (d *DeploySeed2) MySQLEndpoint() string {
+// 	if mysqlVip, find := d.LoadBalancer.Property["mysql_vip"]; find {
+// 		return mysqlVip.(string)
+// 	}
 
-	if len(d.MySQL.Hosts) > 0 {
-		return d.MySQL.Hosts[0].IP
-	}
+// 	if len(d.MySQL.Hosts) > 0 {
+// 		return d.MySQL.Hosts[0].IP
+// 	}
 
-	return ""
-}
+// 	return ""
+// }
 
-func (d *DeploySeed2) K8sEndpoint() string {
-	if k8sVip, find := d.LoadBalancer.Property["k8s_vip"]; find {
-		return k8sVip.(string)
-	}
+// func (d *DeploySeed2) K8sEndpoint() string {
+// 	if k8sVip, find := d.LoadBalancer.Property["k8s_vip"]; find {
+// 		return k8sVip.(string)
+// 	}
 
-	if len(d.K8sMaster.Hosts) > 0 {
-		return d.K8sMaster.Hosts[0].IP
-	}
+// 	if len(d.K8sMaster.Hosts) > 0 {
+// 		return d.K8sMaster.Hosts[0].IP
+// 	}
 
-	return ""
-}
+// 	return ""
+// }
 
 type Component struct {
-	Property map[string]interface{}
-	Hosts    []*database.Host
+	database.MetaComponent
+	Inherent map[string]interface{}
+	Hosts    map[string][]*database.Host
 }
 
-func NewDeploySeed(c *database.Cluster) *DeploySeed2 {
-	hs := make(map[string]*database.Host)
-	for _, h := range c.Hosts {
-		hs[h.ID] = h
-	}
-
+func NewDeploySeed(c *database.Cluster, workDir string) *DeploySeed2 {
 	ds := &DeploySeed2{
 		Registry:     &Component{},
 		Etcd:         &Component{},
@@ -102,19 +98,19 @@ func NewDeploySeed(c *database.Cluster) *DeploySeed2 {
 	for _, cp := range c.Components {
 		switch cp.Name {
 		case "etcd":
-			setComponentHost(hs, cp, ds.Etcd)
+			setComponentHost(c.ID, cp, ds.Etcd, workDir)
 		case "registry":
-			setComponentHost(hs, cp, ds.Registry)
+			setComponentHost(c.ID, cp, ds.Registry, workDir)
 		case "mysql":
-			setComponentHost(hs, cp, ds.MySQL)
+			setComponentHost(c.ID, cp, ds.MySQL, workDir)
 		case "loadbalancer":
-			setComponentHost(hs, cp, (*Component)(ds.LoadBalancer))
+			setComponentHost(c.ID, cp, (*Component)(ds.LoadBalancer), workDir)
 		case "k8smaster":
-			setComponentHost(hs, cp, ds.K8sMaster)
+			setComponentHost(c.ID, cp, ds.K8sMaster, workDir)
 		case "k8snode":
-			setComponentHost(hs, cp, ds.K8sNode)
+			setComponentHost(c.ID, cp, ds.K8sNode, workDir)
 		case "wisecloud":
-			setComponentHost(hs, cp, ds.WiseCloud)
+			setComponentHost(c.ID, cp, ds.WiseCloud, workDir)
 		}
 	}
 
@@ -122,16 +118,42 @@ func NewDeploySeed(c *database.Cluster) *DeploySeed2 {
 }
 
 func setComponentHost(
-	hs map[string]*database.Host,
+	clusterID string,
 	sourceCp *database.Component,
 	destCp *Component,
-) {
-	destCp.Property = sourceCp.Property
-	for _, h := range sourceCp.Hosts {
-		th, ok := hs[h]
-		if !ok {
-			panic(fmt.Errorf("unexpected host: %s", h))
-		}
-		destCp.Hosts = append(destCp.Hosts, th)
+	workDir string,
+) error {
+	destCp.MetaComponent = sourceCp.MetaComponent
+
+	inherent, err := getInherentProperties(
+		path.Join(workDir, sourceCp.Name+PlaybookSuffix, sourceCp.Version),
+	)
+	if err != nil {
+		return err
 	}
+	destCp.Inherent = inherent
+
+	return ConvertHosts(clusterID, sourceCp.Hosts, destCp.Hosts)
+}
+
+func ConvertHosts(
+	clusterID string,
+	sourceHosts map[string][]string,
+	destHost map[string][]*database.Host,
+) error {
+	for k, v := range sourceHosts {
+		hosts := make([]*database.Host, 0, len(v))
+
+		for _, h := range v {
+			hh, err := database.Default().RetrieveHost(clusterID, h)
+			if err != nil {
+				return err
+			}
+			hosts = append(hosts, hh)
+		}
+
+		destHost[k] = hosts
+	}
+
+	return nil
 }

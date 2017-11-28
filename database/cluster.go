@@ -43,10 +43,8 @@ type ClusterComponent struct {
 }
 
 type Component struct {
-	ID       string                 `json:"id"`
-	Name     string                 `json:"name"`
-	Property map[string]interface{} `json:"properties"`
-	Hosts    []string               `json:"hosts"`
+	MetaComponent
+	Hosts map[string][]string `json:"hosts"`
 }
 
 type ClusterLog struct {
@@ -65,4 +63,11 @@ type Notification struct {
 	Stage string `json:"stage"`
 	State string `json:"state"`
 	Host  string `json:"host"`
+}
+
+type MetaComponent struct {
+	ID       string                 `json:"id"`
+	Name     string                 `json:"name"`
+	Version  string                 `json:"version"`
+	Property map[string]interface{} `json:"properties"`
 }
