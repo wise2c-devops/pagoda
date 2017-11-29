@@ -10,15 +10,37 @@ import (
 	"github.com/golang/glog"
 )
 
-type ByName []string
+// Notify - notify to runtime a ansible callback message
+func Notify(n *database.Notification) {
+	runtime.notify(n)
+}
 
-func (s ByName) Len() int {
+// Register - register a websocket client for receive notification
+func Register(name string) chan *database.Notification {
+	return runtime.register(name)
+}
+
+// Annul - annul a websocket client
+func Annul(name string) {
+	runtime.annul(name)
+}
+
+// RetrieveStatus - retrieve a cluster runtime status
+func RetrieveStatus(clusterID string) (*RunningStatus, error) {
+	return runtime.retrieveStatus(clusterID)
+}
+
+type byName []string
+
+func (s byName) Len() int {
 	return len(s)
 }
-func (s ByName) Swap(i, j int) {
+
+func (s byName) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
-func (s ByName) Less(i, j int) bool {
+
+func (s byName) Less(i, j int) bool {
 	return componentMap[s[i]] < componentMap[s[j]]
 }
 
@@ -27,6 +49,7 @@ type notifyChannel struct {
 	c    chan *database.Notification
 }
 
+// RunningStatus - record a cluster running status
 type RunningStatus struct {
 	Stages       []string `json:"stages"`
 	CurrentStage string   `json:"currentStage"`
@@ -46,7 +69,7 @@ type Runtime struct {
 	removeChan       chan string
 }
 
-func NewClusterRuntime() *Runtime {
+func newRuntime() *Runtime {
 	return &Runtime{
 		runningStatus:    &RunningStatus{},
 		mux:              &sync.Mutex{},
@@ -57,7 +80,7 @@ func NewClusterRuntime() *Runtime {
 	}
 }
 
-func (cr *Runtime) StartOperate(c *database.Cluster) {
+func (cr *Runtime) startOperate(c *database.Cluster) {
 	cr.clusterID = c.ID
 	database.Default().DeleteLogs(c.ID)
 
@@ -66,28 +89,28 @@ func (cr *Runtime) StartOperate(c *database.Cluster) {
 	for _, cc := range c.Components {
 		sc = append(sc, cc.Name)
 	}
-	sort.Sort(ByName(sc))
+	sort.Sort(byName(sc))
 
 	cr.mux.Lock()
 	defer cr.mux.Unlock()
 	cr.runningStatus.Stages = sc
 }
 
-func (cr *Runtime) StopOperate(clusterID string) {
+func (cr *Runtime) stopOperate(clusterID string) {
 	cr.mux.Lock()
 	defer cr.mux.Unlock()
 
 	cr.clusterID, cr.runningStatus = "", nil
 }
 
-func (cr *Runtime) RotateStage(clusterID, name string) {
+func (cr *Runtime) rotateStage(clusterID, name string) {
 	cr.mux.Lock()
 	defer cr.mux.Unlock()
 
 	cr.runningStatus.CurrentStage = name
 }
 
-func (cr *Runtime) RetrieveStatus(clusterID string) (*RunningStatus, error) {
+func (cr *Runtime) retrieveStatus(clusterID string) (*RunningStatus, error) {
 	cr.mux.Lock()
 	defer cr.mux.Unlock()
 
@@ -98,7 +121,7 @@ func (cr *Runtime) RetrieveStatus(clusterID string) (*RunningStatus, error) {
 	return nil, fmt.Errorf("no cluster in operating now")
 }
 
-func (cr *Runtime) Register(name string) chan *database.Notification {
+func (cr *Runtime) register(name string) chan *database.Notification {
 	c := make(chan *database.Notification)
 	nc := &notifyChannel{
 		name: name,
@@ -113,7 +136,7 @@ func (cr *Runtime) Register(name string) chan *database.Notification {
 	return c
 }
 
-func (cr *Runtime) Annul(name string) {
+func (cr *Runtime) annul(name string) {
 	select {
 	case cr.removeChan <- name:
 	default:
@@ -121,7 +144,7 @@ func (cr *Runtime) Annul(name string) {
 	}
 }
 
-func (cr *Runtime) Notify(n *database.Notification) {
+func (cr *Runtime) notify(n *database.Notification) {
 	if err := database.Default().CreateLog(cr.clusterID, n); err != nil {
 		glog.Error(err)
 	}
@@ -134,7 +157,7 @@ func (cr *Runtime) Notify(n *database.Notification) {
 	//TODO: set cluster status to Notification's stage
 }
 
-func (cr *Runtime) Run() {
+func (cr *Runtime) run() {
 	for {
 		select {
 		case n := <-cr.registerChan:

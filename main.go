@@ -23,17 +23,14 @@ var (
 			return true
 		},
 	}
-	ansibleChan    = make(chan *database.Notification, 5)
-	commands       = runtime.NewCommands()
-	clusterRuntime = runtime.NewClusterRuntime()
+	ansibleChan = make(chan *database.Notification, 5)
 
 	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
 )
 
 func init() {
 	flag.Parse()
-	go commands.Launch(*workDir, clusterRuntime)
-	go clusterRuntime.Run()
+	runtime.Run(*workDir)
 }
 
 func main() {
@@ -49,7 +46,8 @@ func main() {
 	v1 := r.Group("/v1")
 
 	{
-		v1.GET("/components/:components/:version/properties", properties)
+		v1.GET("/components/:component_name/versions", versions)
+		v1.GET("/components/:component_name/properties/:version", properties)
 
 		v1.GET("/clusters", retrieveClusters)
 		v1.POST("/clusters", createCluster)
@@ -84,8 +82,26 @@ func main() {
 	r.Run("0.0.0.0:8080")
 }
 
+func versions(c *gin.Context) {
+	component := c.Param("component_name")
+	versions, err := playbook.GetVersions(
+		path.Join(
+			*workDir,
+			component+playbook.PlaybookSuffix,
+		),
+	)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+	} else {
+		c.IndentedJSON(http.StatusOK, versions)
+	}
+}
+
 func properties(c *gin.Context) {
-	component := c.Param("component")
+	component := c.Param("component_name")
 	version := c.Param("version")
 	c.Header("Content-Type", "application/json; charset=utf-8")
 
@@ -95,7 +111,7 @@ func properties(c *gin.Context) {
 		path.Join(
 			*workDir,
 			fmt.Sprintf(
-				"%s-playbook/file/%s/properties.json",
+				"%s-playbook/%s/properties.json",
 				component,
 				version,
 			),
@@ -130,7 +146,7 @@ func install(c *gin.Context) {
 		return
 	}
 
-	if err := commands.StartOperate(cluster, op); err != nil {
+	if err := runtime.StartOperate(cluster, op); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -152,7 +168,7 @@ func install(c *gin.Context) {
 }
 
 func stop(c *gin.Context) {
-	commands.StopOperate()
+	runtime.StopOperate()
 }
 
 func notify(c *gin.Context) {
@@ -166,7 +182,7 @@ func notify(c *gin.Context) {
 	}
 
 	glog.V(4).Info(config)
-	clusterRuntime.Notify(config)
+	runtime.Notify(config)
 
 	c.Status(http.StatusOK)
 }
@@ -179,8 +195,8 @@ func stats(c *gin.Context) {
 	}
 	defer wc.Close()
 
-	ch := clusterRuntime.Register(c.Request.RemoteAddr)
-	defer clusterRuntime.Annul(c.Request.RemoteAddr)
+	ch := runtime.Register(c.Request.RemoteAddr)
+	defer runtime.Annul(c.Request.RemoteAddr)
 
 	for {
 		m := <-ch

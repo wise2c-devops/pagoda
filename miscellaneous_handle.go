@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"gitee.com/wisecloud/wise-deploy/database"
+	"gitee.com/wisecloud/wise-deploy/runtime"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +25,7 @@ func retrieveLogs(c *gin.Context) {
 func retrieveClusterStatus(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 
-	status, err := clusterRuntime.RetrieveStatus(clusterID)
+	status, err := runtime.RetrieveStatus(clusterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
