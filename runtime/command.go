@@ -12,17 +12,33 @@ import (
 	"github.com/golang/glog"
 )
 
-type CompleteCode int
+// Run - start command & runtime
+func Run(w string) {
+	go command.Launch(w)
+	go runtime.run()
+}
+
+// StartOperate - start operate a cluster
+func StartOperate(cluster *database.Cluster, config *LaunchParameters) error {
+	return command.StartOperate(cluster, config)
+}
+
+// StopOperate - stop a cluser's operation
+func StopOperate() {
+	command.StopOperate()
+}
+
+type completeCode int
 
 const (
-	finished CompleteCode = iota
+	finished completeCode = iota
 	stopped
 	failed
 )
 
 const (
 	installFile      = "install.ansible"
-	cleanFile        = "clean.ansible"
+	resetFile        = "reset.ansible"
 	installOperation = "install"
 	resetOperation   = "reset"
 )
@@ -48,15 +64,19 @@ var (
 		k8sNode:      5,
 		wisecloud:    6,
 	}
+
+	runtime = newRuntime()
+	command = newCommand(runtime)
 )
 
+// LaunchParameters - needed when start operate a cluser
 type LaunchParameters struct {
 	Operation  string            `json:"operation"`
 	Components []string          `json:"components"`
-	Clster     *database.Cluster `json:"-"`
+	Cluster    *database.Cluster `json:"-"`
 }
 
-type Commands struct {
+type commandT struct {
 	received     []string
 	currentIndex int
 	currentCmd   *exec.Cmd
@@ -72,29 +92,20 @@ type Commands struct {
 	runtime *Runtime
 }
 
-func NewCommands() *Commands {
-	return &Commands{
+func newCommand(runtime *Runtime) *commandT {
+	return &commandT{
 		currentIndex: -1,
 		stopChan:     make(chan bool),
 		nextChan:     make(chan bool, 1), //the length must be one
 		processChan:  make(chan bool, 1), //the length must be one
 		startChan:    make(chan *LaunchParameters),
-		currentCmd:   nil,
+		runtime:      runtime,
 	}
 }
 
-func (c *Commands) Launch(w string, runtime *Runtime) {
-	c.runtime = runtime
-
+func (c *commandT) Launch(w string) {
 	for {
 		select {
-		// case n := <-ansibleChan:
-		// 	if c.currentIndex == -1 {
-		// 		glog.Error("received a improper notify")
-		// 		break
-		// 	}
-		// 	n.Stage = c.received[c.currentIndex]
-		// 	clusterRuntime.Notify(c.cluster, n)
 		case <-c.stopChan:
 			c.complete(stopped)
 		case next := <-c.nextChan:
@@ -105,7 +116,7 @@ func (c *Commands) Launch(w string, runtime *Runtime) {
 					break
 				}
 				c.run(w)
-				c.runtime.RotateStage(c.cluster.ID, c.received[c.currentIndex])
+				c.runtime.rotateStage(c.cluster.ID, c.received[c.currentIndex])
 			} else {
 				c.complete(failed)
 			}
@@ -115,7 +126,7 @@ func (c *Commands) Launch(w string, runtime *Runtime) {
 	}
 }
 
-func (c *Commands) acquire() error {
+func (c *commandT) acquire() error {
 	select {
 	case c.processChan <- true:
 		return nil
@@ -124,7 +135,7 @@ func (c *Commands) acquire() error {
 	}
 }
 
-func (c *Commands) release() error {
+func (c *commandT) release() error {
 	select {
 	case <-c.processChan:
 		return nil
@@ -133,39 +144,39 @@ func (c *Commands) release() error {
 	}
 }
 
-func (c *Commands) start(config *LaunchParameters) {
+func (c *commandT) start(config *LaunchParameters) {
 	if config.Operation == installOperation {
 		c.ansibleFile = installFile
 	} else if config.Operation == resetOperation {
-		c.ansibleFile = cleanFile
+		c.ansibleFile = resetFile
 	} else {
 		return
 	}
 
-	sort.Sort(ByName(config.Components))
+	sort.Sort(byName(config.Components))
 	c.received = append([]string{initHost}, config.Components...)
-	c.cluster = config.Clster
+	c.cluster = config.Cluster
 	c.nextChan <- true
-	c.runtime.StartOperate(c.cluster)
+	c.runtime.startOperate(c.cluster)
 }
 
-func (c *Commands) StartOperate(cluster *database.Cluster, config *LaunchParameters) error {
+func (c *commandT) StartOperate(cluster *database.Cluster, config *LaunchParameters) error {
 	if err := c.acquire(); err != nil {
 		return err
 	}
 	glog.V(3).Infof("begin to install cluster %s", cluster.Name)
 
-	config.Clster = cluster
+	config.Cluster = cluster
 	c.startChan <- config
 
 	return nil
 }
 
-func (c *Commands) StopOperate() {
+func (c *commandT) StopOperate() {
 	c.stopChan <- true
 }
 
-func (c *Commands) run(w string) {
+func (c *commandT) run(w string) {
 	step := c.received[c.currentIndex]
 	cmd := exec.Command("ansible-playbook", c.ansibleFile)
 	cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix)
@@ -184,13 +195,13 @@ func (c *Commands) run(w string) {
 	}()
 }
 
-func (c *Commands) complete(code CompleteCode) {
+func (c *commandT) complete(code completeCode) {
 	switch code {
 	case finished:
 		if c.ansibleFile == installFile {
 			c.cluster.State = database.Success
 			glog.V(3).Info("complete all install step")
-		} else if c.ansibleFile == cleanFile {
+		} else if c.ansibleFile == resetFile {
 			c.cluster.State = database.Initial
 			glog.V(3).Info("complete all reset step")
 		}
@@ -216,5 +227,5 @@ func (c *Commands) complete(code CompleteCode) {
 	c.release()
 
 	c.currentIndex = -1
-	c.runtime.StopOperate(c.cluster.ID)
+	c.runtime.stopOperate(c.cluster.ID)
 }

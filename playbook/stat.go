@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func getVersion(path string) ([]string, error) {
+func GetVersions(path string) ([]string, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return nil, fmt.Errorf("get %s's version error: %v", path, err)
