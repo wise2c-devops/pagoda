@@ -130,7 +130,7 @@ func install(c *gin.Context) {
 		return
 	}
 
-	if err := commands.Install(cluster, op); err != nil {
+	if err := commands.StartOperate(cluster, op); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -152,7 +152,7 @@ func install(c *gin.Context) {
 }
 
 func stop(c *gin.Context) {
-	commands.Stop()
+	commands.StopOperate()
 }
 
 func notify(c *gin.Context) {
@@ -166,7 +166,7 @@ func notify(c *gin.Context) {
 	}
 
 	glog.V(4).Info(config)
-	clusterRuntime.Notify(commands.Cluster, config)
+	clusterRuntime.Notify(config)
 
 	c.Status(http.StatusOK)
 }
@@ -179,8 +179,8 @@ func stats(c *gin.Context) {
 	}
 	defer wc.Close()
 
-	ch := clusterRuntime.Registe(c.Request.RemoteAddr)
-	defer clusterRuntime.Unregiste(c.Request.RemoteAddr)
+	ch := clusterRuntime.Register(c.Request.RemoteAddr)
+	defer clusterRuntime.Annul(c.Request.RemoteAddr)
 
 	for {
 		m := <-ch

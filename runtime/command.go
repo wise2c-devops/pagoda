@@ -39,7 +39,7 @@ const (
 )
 
 var (
-	ComponentMap = map[string]int{
+	componentMap = map[string]int{
 		registry:     0,
 		etcd:         1,
 		mysql:        2,
@@ -60,14 +60,16 @@ type Commands struct {
 	received     []string
 	currentIndex int
 	currentCmd   *exec.Cmd
-	stopChan     chan bool
-	nextChan     chan bool
-	processChan  chan bool
-	startChan    chan *LaunchParameters
-	ansibleFile  string
-	Cluster      *database.Cluster
 
-	runtime *ClusterRuntime
+	cluster     *database.Cluster
+	ansibleFile string
+
+	stopChan    chan bool
+	nextChan    chan bool
+	processChan chan bool
+	startChan   chan *LaunchParameters
+
+	runtime *Runtime
 }
 
 func NewCommands() *Commands {
@@ -81,7 +83,7 @@ func NewCommands() *Commands {
 	}
 }
 
-func (c *Commands) Launch(w string, runtime *ClusterRuntime) {
+func (c *Commands) Launch(w string, runtime *Runtime) {
 	c.runtime = runtime
 
 	for {
@@ -103,7 +105,7 @@ func (c *Commands) Launch(w string, runtime *ClusterRuntime) {
 					break
 				}
 				c.run(w)
-				c.runtime.RotateStage(c.Cluster.ID, c.received[c.currentIndex])
+				c.runtime.RotateStage(c.cluster.ID, c.received[c.currentIndex])
 			} else {
 				c.complete(failed)
 			}
@@ -113,7 +115,7 @@ func (c *Commands) Launch(w string, runtime *ClusterRuntime) {
 	}
 }
 
-func (c *Commands) process() error {
+func (c *Commands) acquire() error {
 	select {
 	case c.processChan <- true:
 		return nil
@@ -122,7 +124,7 @@ func (c *Commands) process() error {
 	}
 }
 
-func (c *Commands) unProcess() error {
+func (c *Commands) release() error {
 	select {
 	case <-c.processChan:
 		return nil
@@ -141,14 +143,14 @@ func (c *Commands) start(config *LaunchParameters) {
 	}
 
 	sort.Sort(ByName(config.Components))
-	c.received = config.Components
-	c.Cluster = config.Clster
+	c.received = append([]string{initHost}, config.Components...)
+	c.cluster = config.Clster
 	c.nextChan <- true
-	c.runtime.ProcessCluster(c.Cluster)
+	c.runtime.StartOperate(c.cluster)
 }
 
-func (c *Commands) Install(cluster *database.Cluster, config *LaunchParameters) error {
-	if err := c.process(); err != nil {
+func (c *Commands) StartOperate(cluster *database.Cluster, config *LaunchParameters) error {
+	if err := c.acquire(); err != nil {
 		return err
 	}
 	glog.V(3).Infof("begin to install cluster %s", cluster.Name)
@@ -159,7 +161,7 @@ func (c *Commands) Install(cluster *database.Cluster, config *LaunchParameters) 
 	return nil
 }
 
-func (c *Commands) Stop() {
+func (c *Commands) StopOperate() {
 	c.stopChan <- true
 }
 
@@ -186,33 +188,33 @@ func (c *Commands) complete(code CompleteCode) {
 	switch code {
 	case finished:
 		if c.ansibleFile == installFile {
-			c.Cluster.State = database.Success
+			c.cluster.State = database.Success
 			glog.V(3).Info("complete all install step")
 		} else if c.ansibleFile == cleanFile {
-			c.Cluster.State = database.Initial
+			c.cluster.State = database.Initial
 			glog.V(3).Info("complete all reset step")
 		}
 	case stopped:
-		if c.Cluster == nil {
+		if c.cluster == nil {
 			glog.Warning("receive a stop but I haven't start")
 			return
 		}
-		c.Cluster.State = database.Failed
+		c.cluster.State = database.Failed
 		if err := c.currentCmd.Process.Kill(); err != nil {
 			glog.Errorf("stop install error: %v", err)
 		}
 	case failed:
-		c.Cluster.State = database.Failed
+		c.cluster.State = database.Failed
 		glog.V(3).Info("failed at a step")
 	}
 
-	err := database.Default().UpdateCluster(c.Cluster)
+	err := database.Default().UpdateCluster(c.cluster)
 	if err != nil {
-		glog.Errorf("update cluster %s error %v", c.Cluster.ID, err)
+		glog.Errorf("update cluster %s error %v", c.cluster.ID, err)
 		return
 	}
-	c.unProcess()
+	c.release()
 
 	c.currentIndex = -1
-	c.runtime.RmCluster(c.Cluster.ID)
+	c.runtime.StopOperate(c.cluster.ID)
 }
