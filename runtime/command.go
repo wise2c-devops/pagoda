@@ -126,7 +126,7 @@ func (c *Commands) unProcess() error {
 
 func (c *Commands) start(config *LaunchParameters) {
 	sort.Sort(ByName(config.Components))
-	c.received = config.Components
+	c.received = append([]string{initHost}, config.Components...)
 	c.Cluster = config.Clster
 
 	if config.Operation == "install" {
