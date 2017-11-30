@@ -1,11 +1,12 @@
 package playbook
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path"
 	"strings"
+
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/golang/glog"
 )
@@ -52,7 +53,7 @@ func getInherentProperties(dir string) map[string]interface{} {
 	}
 
 	value := make(map[string]interface{})
-	if err := json.Unmarshal(bs, &value); err != nil {
+	if err := yaml.Unmarshal(bs, &value); err != nil {
 		glog.Warningf("unmarshal inherent error: %s", err)
 		return nil
 	}
