@@ -137,14 +137,6 @@ func install(c *gin.Context) {
 		})
 		return
 	}
-	config := playbook.NewDeploySeed(cluster, *workDir)
-
-	if err = playbook.PreparePlaybooks(*workDir, config); err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
 
 	if err := runtime.StartOperate(cluster, op); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{

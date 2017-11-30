@@ -20,6 +20,12 @@ func Run(w string) {
 
 // StartOperate - start operate a cluster
 func StartOperate(cluster *database.Cluster, config *LaunchParameters) error {
+	command.deploySeed = playbook.NewDeploySeed(cluster, command.workDir, config.Components)
+
+	if err := playbook.PreparePlaybooks(command.workDir, command.deploySeed); err != nil {
+		return err
+	}
+
 	return command.StartOperate(cluster, config)
 }
 
@@ -83,6 +89,8 @@ type commandT struct {
 
 	cluster     *database.Cluster
 	ansibleFile string
+	workDir     string
+	deploySeed  *playbook.DeploySeed2
 
 	stopChan    chan bool
 	nextChan    chan bool
@@ -104,6 +112,7 @@ func newCommand(runtime *Runtime) *commandT {
 }
 
 func (c *commandT) Launch(w string) {
+	c.workDir = w
 	for {
 		select {
 		case <-c.stopChan:
@@ -179,7 +188,8 @@ func (c *commandT) StopOperate() {
 func (c *commandT) run(w string) {
 	step := c.received[c.currentIndex]
 	cmd := exec.Command("ansible-playbook", c.ansibleFile)
-	cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix)
+	cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix, c.deploySeed.Components[step].Version)
+	glog.V(4).Infof("command work space is %s", cmd.Dir)
 	c.currentCmd = cmd
 
 	go func() {

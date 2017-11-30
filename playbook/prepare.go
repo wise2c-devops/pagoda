@@ -8,8 +8,6 @@ import (
 	"reflect"
 	"strings"
 	"text/template"
-
-	"github.com/golang/glog"
 )
 
 // Template src is template path and dest is template output file
@@ -29,17 +27,9 @@ const (
 )
 
 func PreparePlaybooks(dir string, ds *DeploySeed2) error {
-	files, err := ioutil.ReadDir(dir)
-	if err != nil {
-		return err
-	}
-
-	for _, f := range files {
-		glog.V(4).Infof("file %s have mode %s", f.Name(), f.Mode().String())
-		if f.IsDir() && strings.HasSuffix(f.Name(), PlaybookSuffix) {
-			if err = preparePlaybook(path.Join(dir, f.Name()), ds); err != nil {
-				return err
-			}
+	for k, v := range ds.Components {
+		if err := preparePlaybook(path.Join(dir, k+PlaybookSuffix, v.Version), ds); err != nil {
+			return err
 		}
 	}
 

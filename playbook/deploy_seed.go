@@ -1,20 +1,15 @@
 package playbook
 
 import (
+	"fmt"
 	"path"
 
 	"gitee.com/wisecloud/wise-deploy/database"
 )
 
 type DeploySeed2 struct {
-	Registry     *Component
-	Etcd         *Component
-	MySQL        *Component
-	LoadBalancer *LoadBalancer
-	K8sMaster    *Component
-	K8sNode      *Component
-	WiseCloud    *Component
-	Hosts        []*database.Host
+	Components map[string]*Component
+	Hosts      map[string]*database.Host
 }
 
 // func (d *DeploySeed2) EsEndpoint() string {
@@ -83,35 +78,15 @@ type Component struct {
 	Hosts    map[string][]*database.Host
 }
 
-func NewDeploySeed(c *database.Cluster, workDir string) *DeploySeed2 {
+func NewDeploySeed(c *database.Cluster, workDir string, components []string) *DeploySeed2 {
 	ds := &DeploySeed2{
-		Registry:     &Component{},
-		Etcd:         &Component{},
-		MySQL:        &Component{},
-		LoadBalancer: &LoadBalancer{},
-		K8sMaster:    &Component{},
-		K8sNode:      &Component{},
-		WiseCloud:    &Component{},
+		Components: make(map[string]*Component),
+		Hosts:      make(map[string]*database.Host),
 	}
-	ds.Hosts = c.Hosts
 
-	for _, cp := range c.Components {
-		switch cp.Name {
-		case "etcd":
-			setComponentHost(c.ID, cp, ds.Etcd, workDir)
-		case "registry":
-			setComponentHost(c.ID, cp, ds.Registry, workDir)
-		case "mysql":
-			setComponentHost(c.ID, cp, ds.MySQL, workDir)
-		case "loadbalancer":
-			setComponentHost(c.ID, cp, (*Component)(ds.LoadBalancer), workDir)
-		case "k8smaster":
-			setComponentHost(c.ID, cp, ds.K8sMaster, workDir)
-		case "k8snode":
-			setComponentHost(c.ID, cp, ds.K8sNode, workDir)
-		case "wisecloud":
-			setComponentHost(c.ID, cp, ds.WiseCloud, workDir)
-		}
+	for _, cp := range components {
+		component := getComponent(c, cp, workDir)
+		ds.Components[cp] = component
 	}
 
 	return ds
@@ -125,13 +100,9 @@ func setComponentHost(
 ) error {
 	destCp.MetaComponent = sourceCp.MetaComponent
 
-	inherent, err := getInherentProperties(
+	destCp.Inherent = getInherentProperties(
 		path.Join(workDir, sourceCp.Name+PlaybookSuffix, sourceCp.Version),
 	)
-	if err != nil {
-		return err
-	}
-	destCp.Inherent = inherent
 
 	return ConvertHosts(clusterID, sourceCp.Hosts, destCp.Hosts)
 }
@@ -156,4 +127,38 @@ func ConvertHosts(
 	}
 
 	return nil
+}
+
+func getComponent(c *database.Cluster, componentName string, workDir string) *Component {
+	for _, cp := range c.Components {
+		if componentName == cp.Name {
+			hosts := make(map[string][]*database.Host)
+			for k, v := range cp.Hosts {
+				hs := make([]*database.Host, 0, len(v))
+				for _, h := range v {
+					host := getEntireHost(c, h)
+					hs = append(hs, host)
+				}
+
+				hosts[k] = hs
+			}
+			return &Component{
+				MetaComponent: cp.MetaComponent,
+				Hosts:         hosts,
+				Inherent:      getInherentProperties(path.Join(workDir, cp.Name+PlaybookSuffix, cp.Version)),
+			}
+		}
+	}
+
+	panic(fmt.Sprintf("can't find the component: %s", componentName))
+}
+
+func getEntireHost(c *database.Cluster, host string) *database.Host {
+	for _, h := range c.Hosts {
+		if host == h.ID {
+			return h
+		}
+	}
+
+	panic(fmt.Sprintf("can't find the host: %s", host))
 }
