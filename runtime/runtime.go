@@ -71,7 +71,6 @@ type Runtime struct {
 
 func newRuntime() *Runtime {
 	return &Runtime{
-		runningStatus:    &RunningStatus{},
 		mux:              &sync.Mutex{},
 		notificationChan: make(chan *database.Notification, 5),
 		wsChans:          make(map[string]chan *database.Notification),
@@ -93,7 +92,9 @@ func (cr *Runtime) startOperate(c *database.Cluster) {
 
 	cr.mux.Lock()
 	defer cr.mux.Unlock()
-	cr.runningStatus.Stages = sc
+	cr.runningStatus = &RunningStatus{
+		Stages: sc,
+	}
 }
 
 func (cr *Runtime) stopOperate(clusterID string) {

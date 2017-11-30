@@ -164,6 +164,7 @@ func (c *commandT) start(config *LaunchParameters) {
 
 	sort.Sort(byName(config.Components))
 	c.received = append([]string{initHost}, config.Components...)
+	c.received = config.Components
 	c.cluster = config.Cluster
 	c.nextChan <- true
 	c.runtime.startOperate(c.cluster)
@@ -189,7 +190,6 @@ func (c *commandT) run(w string) {
 	step := c.received[c.currentIndex]
 	cmd := exec.Command("ansible-playbook", c.ansibleFile)
 	cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix, c.deploySeed.Components[step].Version)
-	glog.V(4).Infof("command work space is %s", cmd.Dir)
 	c.currentCmd = cmd
 
 	go func() {
