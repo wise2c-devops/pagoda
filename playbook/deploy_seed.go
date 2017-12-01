@@ -86,10 +86,10 @@ type Component struct {
 	Hosts    map[string][]*database.Host
 }
 
-func NewDeploySeed(c *database.Cluster, workDir string, components []string) *DeploySeed2 {
+func NewDeploySeed(c *database.Cluster, workDir string) *DeploySeed2 {
 	ds := DeploySeed2(make(map[string]*Component))
 
-	for _, cp := range components {
+	for _, cp := range GetComponents(workDir) {
 		component := getComponent(c, cp, workDir)
 		ds[cp] = component
 	}

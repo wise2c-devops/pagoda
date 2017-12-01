@@ -11,10 +11,10 @@ import (
 	"github.com/golang/glog"
 )
 
-func GetComponents(path string) ([]string, error) {
+func GetComponents(path string) []string {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		return nil, fmt.Errorf("get %s's avariable components error: %v", path, err)
+		panic(fmt.Sprintf("get %s's avariable components error: %v", path, err))
 	}
 
 	components := make([]string, 0, len(files))
@@ -24,7 +24,7 @@ func GetComponents(path string) ([]string, error) {
 		}
 	}
 
-	return components, nil
+	return components
 }
 
 func GetVersions(path string) ([]string, error) {

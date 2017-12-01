@@ -20,7 +20,7 @@ func Run(w string) {
 
 // StartOperate - start operate a cluster
 func StartOperate(cluster *database.Cluster, config *LaunchParameters) error {
-	command.deploySeed = playbook.NewDeploySeed(cluster, command.workDir, config.Components)
+	command.deploySeed = playbook.NewDeploySeed(cluster, command.workDir)
 
 	if err := playbook.PreparePlaybooks(command.workDir, command.deploySeed); err != nil {
 		return err
