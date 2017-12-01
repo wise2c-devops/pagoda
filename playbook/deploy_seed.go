@@ -9,8 +9,8 @@ import (
 
 type DeploySeed2 map[string]*Component
 
-func NewDeploySeed(c *database.Cluster, workDir string) map[string]*Component {
-	cs := make(map[string]*Component)
+func NewDeploySeed(c *database.Cluster, workDir string) *DeploySeed2 {
+	cs := DeploySeed2(make(map[string]*Component))
 	for _, cp := range c.Components {
 		hosts := make(map[string][]*database.Host)
 		for k, v := range cp.Hosts {
@@ -30,7 +30,7 @@ func NewDeploySeed(c *database.Cluster, workDir string) map[string]*Component {
 		}
 	}
 
-	return cs
+	return &cs
 }
 
 func (ds *DeploySeed2) AllHosts() []*database.Host {
@@ -49,7 +49,6 @@ type Component struct {
 	Inherent map[string]interface{}
 	Hosts    map[string][]*database.Host
 }
-
 
 func setComponentHost(
 	clusterID string,
