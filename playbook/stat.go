@@ -14,7 +14,7 @@ import (
 func GetComponents(path string) ([]string, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		return nil, fmt.Errorf("get %s's version error: %v", path, err)
+		return nil, fmt.Errorf("get %s's avariable components error: %v", path, err)
 	}
 
 	components := make([]string, 0, len(files))

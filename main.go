@@ -46,6 +46,7 @@ func main() {
 	v1 := r.Group("/v1")
 
 	{
+		v1.GET("/components", components)
 		v1.GET("/components/:component_name/versions", versions)
 		v1.GET("/components/:component_name/properties/:version", properties)
 

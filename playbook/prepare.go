@@ -27,7 +27,7 @@ const (
 )
 
 func PreparePlaybooks(dir string, ds *DeploySeed2) error {
-	for k, v := range ds.Components {
+	for k, v := range map[string]*Component(*ds) {
 		if err := preparePlaybook(path.Join(dir, k+PlaybookSuffix, v.Version), ds); err != nil {
 			return err
 		}

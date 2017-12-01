@@ -189,7 +189,11 @@ func (c *commandT) StopOperate() {
 func (c *commandT) run(w string) {
 	step := c.received[c.currentIndex]
 	cmd := exec.Command("ansible-playbook", c.ansibleFile)
-	cmd.Dir = path.Join(w, step+playbook.PlaybookSuffix, c.deploySeed.Components[step].Version)
+	cmd.Dir = path.Join(
+		w,
+		step+playbook.PlaybookSuffix,
+		map[string]*playbook.Component(*c.deploySeed)[step].Version,
+	)
 	c.currentCmd = cmd
 
 	go func() {

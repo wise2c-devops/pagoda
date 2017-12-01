@@ -7,9 +7,17 @@ import (
 	"gitee.com/wisecloud/wise-deploy/database"
 )
 
-type DeploySeed2 struct {
-	Components map[string]*Component
-	Hosts      map[string]*database.Host
+type DeploySeed2 map[string]*Component
+
+func (ds *DeploySeed2) AllHosts() []*database.Host {
+	hosts := make([]*database.Host, 0)
+	for _, v := range map[string]*Component(*ds) {
+		for _, hv := range v.Hosts {
+			hosts = append(hosts, hv...)
+		}
+	}
+
+	return hosts
 }
 
 // func (d *DeploySeed2) EsEndpoint() string {
@@ -79,17 +87,14 @@ type Component struct {
 }
 
 func NewDeploySeed(c *database.Cluster, workDir string, components []string) *DeploySeed2 {
-	ds := &DeploySeed2{
-		Components: make(map[string]*Component),
-		Hosts:      make(map[string]*database.Host),
-	}
+	ds := DeploySeed2(make(map[string]*Component))
 
 	for _, cp := range components {
 		component := getComponent(c, cp, workDir)
-		ds.Components[cp] = component
+		ds[cp] = component
 	}
 
-	return ds
+	return &ds
 }
 
 func setComponentHost(
