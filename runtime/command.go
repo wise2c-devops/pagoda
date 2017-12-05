@@ -200,7 +200,7 @@ func (c *commandT) run(w string) {
 		glog.V(3).Infof("start step %s", step)
 		err := cmd.Run()
 		if err != nil {
-			glog.V(3).Infof("step %s failed ", step)
+			glog.V(3).Infof("step %s failed: %v", step, err)
 			c.nextChan <- false
 		} else {
 			glog.V(3).Infof("step %s compeleted", step)
