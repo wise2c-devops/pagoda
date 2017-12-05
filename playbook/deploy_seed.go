@@ -33,11 +33,13 @@ func NewDeploySeed(c *database.Cluster, workDir string) *DeploySeed2 {
 	return &cs
 }
 
-func (ds *DeploySeed2) AllHosts() []*database.Host {
-	hosts := make([]*database.Host, 0)
+func (ds *DeploySeed2) AllHosts() map[string]*database.Host {
+	hosts := make(map[string]*database.Host)
 	for _, v := range map[string]*Component(*ds) {
 		for _, hv := range v.Hosts {
-			hosts = append(hosts, hv...)
+			for _, h := range hv {
+				hosts[h.IP] = h
+			}
 		}
 	}
 
