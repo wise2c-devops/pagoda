@@ -198,9 +198,9 @@ func (c *commandT) run(w string) {
 
 	go func() {
 		glog.V(3).Infof("start step %s", step)
-		err := cmd.Run()
+		output, err := cmd.CombinedOutput()
 		if err != nil {
-			glog.V(3).Infof("step %s failed: %v", step, err)
+			glog.V(3).Infof("step %s failed: %v with output: %s", step, err, output)
 			c.nextChan <- false
 		} else {
 			glog.V(3).Infof("step %s compeleted", step)
