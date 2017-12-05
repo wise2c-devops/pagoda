@@ -50,7 +50,7 @@ const (
 )
 
 const (
-	initHost     = "init"
+	docker       = "docker"
 	registry     = "registry"
 	etcd         = "etcd"
 	mysql        = "mysql"
@@ -62,13 +62,14 @@ const (
 
 var (
 	componentMap = map[string]int{
-		registry:     0,
-		etcd:         1,
-		mysql:        2,
-		loadbalancer: 3,
-		k8sMaster:    4,
-		k8sNode:      5,
-		wisecloud:    6,
+		docker:       0,
+		registry:     1,
+		etcd:         2,
+		mysql:        3,
+		loadbalancer: 4,
+		k8sMaster:    5,
+		k8sNode:      6,
+		wisecloud:    7,
 	}
 
 	runtime = newRuntime()
