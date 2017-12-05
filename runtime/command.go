@@ -164,7 +164,6 @@ func (c *commandT) start(config *LaunchParameters) {
 	}
 
 	sort.Sort(byName(config.Components))
-	c.received = append([]string{initHost}, config.Components...)
 	c.received = config.Components
 	c.cluster = config.Cluster
 	c.nextChan <- true
