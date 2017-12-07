@@ -210,6 +210,7 @@ func (c *commandT) run(w string) {
 }
 
 func (c *commandT) complete(code completeCode) {
+	defer c.release()
 	switch code {
 	case finished:
 		if c.ansibleFile == installFile {
@@ -238,7 +239,6 @@ func (c *commandT) complete(code completeCode) {
 		glog.Errorf("update cluster %s error %v", c.cluster.ID, err)
 		return
 	}
-	c.release()
 
 	c.currentIndex = -1
 	c.runtime.stopOperate(c.cluster.ID)
