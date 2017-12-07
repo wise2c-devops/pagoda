@@ -26,8 +26,12 @@ func NewDeploySeed(c *database.Cluster, workDir string) *DeploySeed2 {
 		cs[cp.Name] = &Component{
 			MetaComponent: cp.MetaComponent,
 			Hosts:         hosts,
-			Inherent:      getInherentProperties(path.Join(workDir, cp.Name+PlaybookSuffix, cp.Version)),
 		}
+
+		getInherentProperties(
+			path.Join(workDir, cp.Name+PlaybookSuffix, cp.Version),
+			cs[cp.Name],
+		)
 	}
 
 	return &cs
@@ -52,20 +56,20 @@ type Component struct {
 	Hosts    map[string][]*database.Host
 }
 
-func setComponentHost(
-	clusterID string,
-	sourceCp *database.Component,
-	destCp *Component,
-	workDir string,
-) error {
-	destCp.MetaComponent = sourceCp.MetaComponent
+// func setComponentHost(
+// 	clusterID string,
+// 	sourceCp *database.Component,
+// 	destCp *Component,
+// 	workDir string,
+// ) error {
+// 	destCp.MetaComponent = sourceCp.MetaComponent
 
-	destCp.Inherent = getInherentProperties(
-		path.Join(workDir, sourceCp.Name+PlaybookSuffix, sourceCp.Version),
-	)
+// 	destCp.Inherent = getInherentProperties(
+// 		path.Join(workDir, sourceCp.Name+PlaybookSuffix, sourceCp.Version),
+// 	)
 
-	return ConvertHosts(clusterID, sourceCp.Hosts, destCp.Hosts)
-}
+// 	return ConvertHosts(clusterID, sourceCp.Hosts, destCp.Hosts)
+// }
 
 func ConvertHosts(
 	clusterID string,

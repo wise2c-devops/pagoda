@@ -1,10 +1,12 @@
 package playbook
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"path"
 	"strings"
+	"text/template"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -45,18 +47,26 @@ func GetVersions(path string) ([]string, error) {
 	return versions, nil
 }
 
-func getInherentProperties(dir string) map[string]interface{} {
+func getInherentProperties(dir string, cp *Component) {
+	buf := &bytes.Buffer{}
+
 	bs, err := ioutil.ReadFile(path.Join(dir, "inherent.yaml"))
 	if err != nil {
 		glog.Warningf("read file dir inherent property error: %v", err)
-		return nil
+		return
+	}
+
+	tp := template.Must(template.New("inherent").Funcs(fns).Parse(string(bs)))
+	err = tp.Execute(buf, cp)
+	if err != nil {
+		glog.Warningf(fmt.Sprintf("execute template for %s/inherent.yaml error: %v", dir, err))
+		return
 	}
 
 	value := make(map[string]interface{})
-	if err := yaml.Unmarshal(bs, &value); err != nil {
+	if err := yaml.Unmarshal(buf.Bytes(), &value); err != nil {
 		glog.Warningf("unmarshal inherent error: %s", err)
-		return nil
 	}
 
-	return value
+	cp.Inherent = value
 }
