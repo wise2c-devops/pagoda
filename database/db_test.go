@@ -1,6 +1,7 @@
 package database
 
 import (
+	"os"
 	"testing"
 )
 
@@ -12,13 +13,11 @@ var (
 		DBURL:        "./cluster.db",
 		InitSQL:      "./table.sql",
 	}
-	ti = Instance(sqlConfig)
 
 	tc = []struct {
-		c          *Cluster
-		available  bool
-		upState    string
-		finalState string
+		c         *Cluster
+		available bool
+		upState   string
 	}{
 		{
 			&Cluster{
@@ -28,7 +27,6 @@ var (
 				Description: "for mian unit test",
 			},
 			true,
-			Success,
 			Success,
 		},
 		{
@@ -40,12 +38,14 @@ var (
 			},
 			false,
 			Success,
-			Success,
 		},
 	}
 )
 
 func TestCluster(t *testing.T) {
+	os.Remove(tSQLConfig.DBURL)
+	ti := Instance(tSQLConfig)
+
 	var num int
 	cs, err := ti.RetrieveClusters()
 	if err != nil {
@@ -58,7 +58,7 @@ func TestCluster(t *testing.T) {
 
 	for _, c := range tc {
 		err := ti.CreateCluster(c.c)
-		if err != nil {
+		if (err != nil) == c.available {
 			t.Error(err)
 		}
 
@@ -70,8 +70,26 @@ func TestCluster(t *testing.T) {
 	for _, c := range tc {
 		c.c.State = c.upState
 		err := ti.UpdateCluster(c.c)
-		if (err != nil) != c.available {
-			t.Errorf("%v", err)
+		if (err != nil) == c.available {
+			t.Errorf("cluster %s update unexpected", c.c.Name)
+			return
+		}
+
+		cc, err := ti.RetrieveCluster(c.c.ID)
+		if (err != nil) == c.available {
+			t.Errorf("cluster %s retrieve unexpected", c.c.Name)
+			return
+		}
+
+		if (cc.State != c.upState) == c.available {
+			t.Errorf("%s state is identical", cc.Name)
+			return
+		}
+
+		err = ti.DeleteCluster(c.c.ID)
+		if (err != nil) == c.available {
+			t.Errorf("cluster %s delete unexpected", c.c.Name)
+			return
 		}
 	}
 }
