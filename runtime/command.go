@@ -119,7 +119,7 @@ func (c *commandT) Launch(w string) {
 		case <-c.stopChan:
 			c.complete(stopped)
 		case next := <-c.nextChan:
-			if next {
+			if next && c.cluster != nil {
 				c.currentIndex++
 				if c.currentIndex == len(c.received) {
 					c.complete(finished)
@@ -160,6 +160,7 @@ func (c *commandT) start(config *LaunchParameters) {
 	} else if config.Operation == resetOperation {
 		c.ansibleFile = resetFile
 	} else {
+		glog.Errorf("get unexpected operation %s", config.Operation)
 		return
 	}
 
@@ -225,10 +226,12 @@ func (c *commandT) complete(code completeCode) {
 			glog.Warning("receive a stop but I haven't start")
 			return
 		}
-		c.cluster.State = database.Failed
 		if err := c.currentCmd.Process.Kill(); err != nil {
+			c.cluster.State = database.Failed
 			glog.Errorf("stop install error: %v", err)
 		}
+		c.cluster = nil
+		c.currentCmd = nil
 	case failed:
 		c.cluster.State = database.Failed
 		glog.V(3).Info("failed at a step")

@@ -31,6 +31,7 @@ func retrieveClusterStatus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
+		return
 	}
 
 	c.IndentedJSON(http.StatusOK, status)
