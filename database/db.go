@@ -18,6 +18,8 @@ type EngineConfig struct {
 	SQLType      string
 	ShowSQL      bool
 	ShowExecTime bool
+	DBURL        string
+	InitSQL      string
 }
 
 var (
@@ -27,6 +29,8 @@ var (
 		SQLType:      "sqlite3",
 		ShowSQL:      false,
 		ShowExecTime: true,
+		DBURL:        "/deploy/cluster.db",
+		InitSQL:      "/root/table.sql",
 	}
 )
 
@@ -51,7 +55,7 @@ func Instance(config *EngineConfig) *SQLEngine {
 func NewEngine(config *EngineConfig) (*SQLEngine, error) {
 	e := &SQLEngine{}
 	if config.SQLType == "sqlite3" {
-		engine, err := xorm.NewEngine("sqlite3", "/deploy/cluster.db")
+		engine, err := xorm.NewEngine("sqlite3", config.DBURL)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +64,7 @@ func NewEngine(config *EngineConfig) (*SQLEngine, error) {
 
 	e.xe.ShowSQL(config.ShowSQL)
 	e.xe.ShowExecTime(config.ShowExecTime)
-	_, err := e.xe.ImportFile("/root/table.sql")
+	_, err := e.xe.ImportFile(config.InitSQL)
 	return e, err
 }
 

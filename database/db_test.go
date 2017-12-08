@@ -2,51 +2,76 @@ package database
 
 import (
 	"testing"
+)
 
-	"gitee.com/wisecloud/wise-deploy/cluster"
+var (
+	tSQLConfig = &EngineConfig{
+		SQLType:      "sqlite3",
+		ShowSQL:      false,
+		ShowExecTime: true,
+		DBURL:        "./cluster.db",
+		InitSQL:      "./table.sql",
+	}
+	ti = Instance(sqlConfig)
+
+	tc = []struct {
+		c          *Cluster
+		available  bool
+		upState    string
+		finalState string
+	}{
+		{
+			&Cluster{
+				ID:          newUUID(),
+				Name:        "Test",
+				State:       Initial,
+				Description: "for mian unit test",
+			},
+			true,
+			Success,
+			Success,
+		},
+		{
+			&Cluster{
+				ID:          newUUID(),
+				Name:        "test",
+				State:       Initial,
+				Description: "for another unit test",
+			},
+			false,
+			Success,
+			Success,
+		},
+	}
 )
 
 func TestCluster(t *testing.T) {
-	config := &EngineConfig{
-		SQLType: "sqlite3",
-		ShowSQL: true,
-	}
-
-	e, err := NewEngine(config)
+	var num int
+	cs, err := ti.RetrieveClusters()
 	if err != nil {
 		t.Error(err)
 	}
 
-	c1 := &cluster.Cluster{
-		ID:          "c1",
-		Name:        "c1",
-		Description: "c1",
-	}
-	err = e.CreateCluster(c1)
-	if err != nil {
-		t.Error(err)
+	if len(cs) != num {
+		t.Errorf("except get %d cluster, bug get %d", num, len(cs))
 	}
 
-	c2 := &cluster.Cluster{
-		ID:          "c2",
-		Name:        "c2",
-		Description: "c2",
-	}
-	err = e.CreateCluster(c2)
+	for _, c := range tc {
+		err := ti.CreateCluster(c.c)
+		if err != nil {
+			t.Error(err)
+		}
 
-	c3 := &cluster.Cluster{
-		ID:          "c3",
-		Name:        "c3",
-		Description: "c3",
+		if c.available {
+			num++
+		}
 	}
-	err = e.CreateCluster(c3)
 
-	cs, err := e.RetrieveClusters()
-	if err != nil {
-		t.Error(err)
-	} else {
-		for _, c := range cs {
-			t.Log(c)
+	for _, c := range tc {
+		c.c.State = c.upState
+		err := ti.UpdateCluster(c.c)
+		if (err != nil) != c.available {
+			t.Errorf("%v", err)
 		}
 	}
 }
@@ -63,13 +88,15 @@ func TestComponent(t *testing.T) {
 	}
 
 	c := &Component{
-		Name: "etcd",
-		Property: map[string]interface{}{
-			"caFile": "ca.crt",
+		MetaComponent: MetaComponent{
+			Name: "etcd",
+			Property: map[string]interface{}{
+				"key": "value",
+			},
 		},
-		Hosts: []string{
-			"aaa",
-			"bbb",
+		Hosts: map[string][]string{
+			"aaa": []string{"aaa"},
+			"bbb": []string{"bbb"},
 		},
 	}
 	err = e.CreateComponent("f4a27554-41c6-4a6b-bd30-e13c131756c1", c)
@@ -102,7 +129,7 @@ func TestHost(t *testing.T) {
 		t.Error(err)
 	}
 
-	h := &cluster.Host{
+	h := &Host{
 		HostName:    "k8s01",
 		IP:          "172.20.8.1",
 		Description: "001",
