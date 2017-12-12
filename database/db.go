@@ -105,7 +105,6 @@ func (e *SQLEngine) DeleteCluster(id string) error {
 	}
 
 	if i, err := rs.RowsAffected(); i == 0 || err != nil {
-		glog.V(3).Info(err)
 		return fmt.Errorf("can't find cluster %s", id)
 	}
 
@@ -184,13 +183,22 @@ func (e *SQLEngine) CreateComponent(clusterID string, cp *Component) error {
 	return err
 }
 
-func (e *SQLEngine) DeleteComponent(clusterID string, name string) error {
-	_, err := e.xe.Exec(
+func (e *SQLEngine) DeleteComponent(clusterID string, id string) error {
+	rs, err := e.xe.Exec(
 		"delete from cluster_component where cluster_id = ? and component_id = ?",
 		clusterID,
-		name,
+		id,
 	)
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	if i, err := rs.RowsAffected(); i == 0 || err != nil {
+		return fmt.Errorf("can't find component %s", id)
+	}
+
+	return nil
 }
 
 func (e *SQLEngine) UpdateComponent(clusterID string, cp *Component) error {
@@ -224,9 +232,17 @@ func (e *SQLEngine) RetrieveComponent(
 	cc := &ClusterComponent{
 		ClusterID:   clusterID,
 		ComponentID: id,
+		Component:   &Component{},
 	}
-	_, err := e.xe.Get(cc)
-	return cc.Component, err
+
+	has, err := e.xe.Get(cc)
+	if err != nil {
+		return cc.Component, err
+	} else if !has {
+		return cc.Component, fmt.Errorf("can't find component %s", id)
+	} else {
+		return cc.Component, nil
+	}
 }
 
 func (e *SQLEngine) RetrieveHosts(

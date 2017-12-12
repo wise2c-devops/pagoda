@@ -5,6 +5,21 @@ import (
 	"testing"
 )
 
+func newClusterComponent(name, pName string) *ClusterComponent {
+	return &ClusterComponent{
+		ComponentName: name,
+		Component: &Component{
+			MetaComponent: MetaComponent{
+				Name:    name,
+				Version: "1.12.6",
+				Property: map[string]interface{}{
+					"key": pName,
+				},
+			},
+		},
+	}
+}
+
 var (
 	tSQLConfig = &EngineConfig{
 		SQLType:      "sqlite3",
@@ -21,7 +36,6 @@ var (
 	}{
 		{
 			&Cluster{
-				ID:          newUUID(),
 				Name:        "Test",
 				State:       Initial,
 				Description: "for mian unit test",
@@ -31,7 +45,6 @@ var (
 		},
 		{
 			&Cluster{
-				ID:          newUUID(),
 				Name:        "test",
 				State:       Initial,
 				Description: "for another unit test",
@@ -40,6 +53,49 @@ var (
 			Success,
 		},
 	}
+
+	tcpa = []struct {
+		cp        *ClusterComponent
+		available bool
+		upVersion string
+	}{
+		{
+			newClusterComponent("docker", "docker"),
+			true,
+			"17.12",
+		},
+		{
+			newClusterComponent("docker", "Docker"),
+			false,
+			"17.12",
+		},
+	}
+
+	tcpb = []struct {
+		cp        *ClusterComponent
+		available bool
+		upVersion string
+	}{
+		{
+			newClusterComponent("docker", "Docker"),
+			true,
+			"17.12",
+		},
+		{
+			newClusterComponent("docker", "docker"),
+			false,
+			"17.12",
+		},
+	}
+
+	tcpm = map[string][]struct {
+		cp        *ClusterComponent
+		available bool
+		upVersion string
+	}{
+		"Test": tcpa,
+		"test": tcpb,
+	}
 )
 
 func TestCluster(t *testing.T) {
@@ -47,29 +103,19 @@ func TestCluster(t *testing.T) {
 	ti := Instance(tSQLConfig)
 
 	var num int
-	cs, err := ti.RetrieveClusters()
-	if err != nil {
-		t.Error(err)
-	}
-
-	if len(cs) != num {
-		t.Errorf("except get %d cluster, bug get %d", num, len(cs))
-	}
-
 	for _, c := range tc {
 		err := ti.CreateCluster(c.c)
 		if (err != nil) == c.available {
-			t.Error(err)
+			t.Errorf("cluster %s create unexpected", c.c.Name)
+			return
 		}
 
 		if c.available {
 			num++
 		}
-	}
 
-	for _, c := range tc {
 		c.c.State = c.upState
-		err := ti.UpdateCluster(c.c)
+		err = ti.UpdateCluster(c.c)
 		if (err != nil) == c.available {
 			t.Errorf("cluster %s update unexpected", c.c.Name)
 			return
@@ -85,8 +131,25 @@ func TestCluster(t *testing.T) {
 			t.Errorf("%s state is identical", cc.Name)
 			return
 		}
+	}
 
-		err = ti.DeleteCluster(c.c.ID)
+	cs, err := ti.RetrieveClusters()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if len(cs) != num {
+		t.Errorf("except get %d cluster, bug get %d", num, len(cs))
+		return
+	}
+
+	if !t.Run("test component", testComponent) {
+		return
+	}
+
+	for _, c := range tc {
+		err := ti.DeleteCluster(c.c.ID)
 		if (err != nil) == c.available {
 			t.Errorf("cluster %s delete unexpected", c.c.Name)
 			return
@@ -94,52 +157,70 @@ func TestCluster(t *testing.T) {
 	}
 }
 
-func TestComponent(t *testing.T) {
-	config := &EngineConfig{
-		SQLType: "sqlite3",
-		ShowSQL: true,
+func testComponent(t *testing.T) {
+	ti := Instance(tSQLConfig)
+
+	for _, c := range tc {
+		var num int
+		for i := 0; i < len(tcpm[c.c.Name]); i++ {
+			cp := tcpm[c.c.Name][i]
+			err := ti.CreateComponent(c.c.ID, cp.cp.Component)
+			if (err != nil) == (c.available && cp.available) {
+				t.Errorf("component %s create unexcepted", cp.cp.Component.Property["key"])
+				return
+			}
+			cp.cp.ComponentID = cp.cp.Component.ID
+
+			if c.available && cp.available {
+				num++
+			}
+
+			cp.cp.Component.Version = cp.upVersion
+			err = ti.UpdateComponent(c.c.ID, cp.cp.Component)
+			if (err != nil) == (c.available && cp.available) {
+				t.Errorf("component %s update unexcepted", cp.cp.Component.Property["key"])
+				return
+			}
+
+			cpp, err := ti.RetrieveComponent(c.c.ID, cp.cp.ComponentID)
+			if (err != nil) == (c.available && cp.available) {
+				t.Errorf("component %s retrieve unexcepted", cp.cp.Component.Property["key"])
+				return
+			}
+
+			if (cpp.Version != cp.upVersion) == (c.available && cp.available) {
+				t.Errorf("%s version is identical", cp.cp.Component.Property["key"])
+				return
+			}
+		}
+
+		cs, err := ti.RetrieveComponents(c.c.ID)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if len(cs) != num {
+			t.Errorf("except get %d components, bug get %d", num, len(cs))
+			return
+		}
 	}
 
-	e, err := NewEngine(config)
-	if err != nil {
-		t.Error(err)
-	}
-
-	c := &Component{
-		MetaComponent: MetaComponent{
-			Name: "etcd",
-			Property: map[string]interface{}{
-				"key": "value",
-			},
-		},
-		Hosts: map[string][]string{
-			"aaa": []string{"aaa"},
-			"bbb": []string{"bbb"},
-		},
-	}
-	err = e.CreateComponent("f4a27554-41c6-4a6b-bd30-e13c131756c1", c)
-	if err != nil {
-		t.Error(err)
-	}
-
-	c.Property["caKey"] = "ca.key"
-	err = e.UpdateComponent("f4a27554-41c6-4a6b-bd30-e13c131756c1", c)
-	if err != nil {
-		t.Error(err)
-	}
-
-	c1, err := e.RetrieveComponent("f4a27554-41c6-4a6b-bd30-e13c131756c1", "etcd")
-	if err != nil {
-		t.Error(err)
-	} else {
-		t.Log(c1)
+	for _, c := range tc {
+		for _, cp := range tcpm[c.c.Name] {
+			err := ti.DeleteComponent(c.c.ID, cp.cp.ComponentID)
+			if (err != nil) == (c.available && cp.available) {
+				t.Errorf("component %s delete unexpected", cp.cp.Component.Property["key"])
+				return
+			}
+		}
 	}
 }
 
-func TestHost(t *testing.T) {
+func testHost(t *testing.T) {
 	config := &EngineConfig{
 		SQLType: "sqlite3",
-		ShowSQL: true,
+		ShowSQL: false,
 	}
 
 	e, err := NewEngine(config)
