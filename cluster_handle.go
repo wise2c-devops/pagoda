@@ -10,7 +10,7 @@ import (
 )
 
 func retrieveClusters(c *gin.Context) {
-	cs, err := database.Default().RetrieveClusters()
+	cs, err := database.Instance().RetrieveClusters()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -29,7 +29,7 @@ func createCluster(c *gin.Context) {
 		return
 	}
 
-	err := database.Default().CreateCluster(cluster)
+	err := database.Instance().CreateCluster(cluster)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -42,7 +42,7 @@ func createCluster(c *gin.Context) {
 func deleteCluster(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 
-	if err := database.Default().DeleteCluster(clusterID); err != nil {
+	if err := database.Instance().DeleteCluster(clusterID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -68,7 +68,7 @@ func updateCluster(c *gin.Context) {
 		return
 	}
 
-	err := database.Default().UpdateCluster(cluster)
+	err := database.Instance().UpdateCluster(cluster)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -82,7 +82,7 @@ func retrieveCluster(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 
 	if cluster, err := database.
-		Default().
+		Instance().
 		RetrieveCluster(clusterID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

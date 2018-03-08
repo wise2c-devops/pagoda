@@ -5,39 +5,46 @@ import "gitee.com/wisecloud/wise-deploy/database"
 
 func TestPreparePlaybooks(t *testing.T) {
 	ds := &DeploySeed2{
-		Registry: &Component{
-			Hosts: []*database.Host{
-				&database.Host{IP: "192.168.0.101"},
+		"Registry": &Component{
+			Hosts: map[string][]*database.Host{
+				"self": []*database.Host{
+					&database.Host{IP: "192.168.0.101"},
+				},
 			},
 		},
-		Etcd: &Component{
-			Hosts: []*database.Host{
-				&database.Host{IP: "192.168.0.101"},
+		"Etcd": &Component{
+			Hosts: map[string][]*database.Host{
+				"self": []*database.Host{
+					&database.Host{IP: "192.168.0.101"},
+				},
 			},
 		},
-		MySQL: &Component{
-			Hosts: []*database.Host{
-				&database.Host{IP: "192.168.0.101"},
+		"MySQL": &Component{
+			Hosts: map[string][]*database.Host{
+				"self": []*database.Host{
+					&database.Host{IP: "192.168.0.101"},
+				},
 			},
 		},
-		LoadBalancer: &LoadBalancer{
-			Hosts: []*database.Host{
-				&database.Host{IP: "192.168.0.101"},
+		"LoadBalancer": &Component{
+			Hosts: map[string][]*database.Host{
+				"self": []*database.Host{
+					&database.Host{IP: "192.168.0.101"},
+				},
 			},
 		},
-		K8sMaster: &Component{
-			Hosts: []*database.Host{
-				&database.Host{IP: "192.168.0.101"},
+		"K8sMaster": &Component{
+			Hosts: map[string][]*database.Host{
+				"self": []*database.Host{
+					&database.Host{IP: "192.168.0.101"},
+				},
 			},
 		},
-		K8sNode: &Component{
-			Hosts: []*database.Host{
-				&database.Host{IP: "192.168.0.101"},
-			},
-		},
-		WiseCloud: &Component{
-			Hosts: []*database.Host{
-				&database.Host{IP: "192.168.0.101"},
+		"WiseCloud": &Component{
+			Hosts: map[string][]*database.Host{
+				"self": []*database.Host{
+					&database.Host{IP: "192.168.0.101"},
+				},
 			},
 		},
 	}

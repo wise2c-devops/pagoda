@@ -237,7 +237,7 @@ func (c *commandT) complete(code completeCode) {
 		glog.V(3).Info("failed at a step")
 	}
 
-	err := database.Default().UpdateCluster(c.cluster)
+	err := database.Instance().UpdateCluster(c.cluster)
 	if err != nil {
 		glog.Errorf("update cluster %s error %v", c.cluster.ID, err)
 		return

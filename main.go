@@ -25,11 +25,15 @@ var (
 	}
 	ansibleChan = make(chan *database.Notification, 5)
 
-	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
+	workDir *string
 )
 
 func init() {
+	workDir = flag.String("w", ".", "ansible playbook should be placed in it")
+	database.DBPath = flag.String("db-path", "/deploy/cluster.db", "sqlite db file path")
+	database.InitSQL = flag.String("init-sql", "/root/table.sql", "sql file to init db")
 	flag.Parse()
+
 	runtime.Run(*workDir)
 }
 
@@ -131,7 +135,7 @@ func install(c *gin.Context) {
 
 	clusterID := c.Param("cluster_id")
 
-	cluster, err := database.Default().RetrieveCluster(clusterID)
+	cluster, err := database.Instance().RetrieveCluster(clusterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -147,7 +151,7 @@ func install(c *gin.Context) {
 	}
 
 	cluster.State = database.Processing
-	err = database.Default().UpdateCluster(cluster)
+	err = database.Instance().UpdateCluster(cluster)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

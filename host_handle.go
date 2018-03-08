@@ -11,7 +11,7 @@ import (
 func retrieveHosts(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 
-	hs, err := database.Default().RetrieveHosts(clusterID)
+	hs, err := database.Instance().RetrieveHosts(clusterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -31,7 +31,7 @@ func createHost(c *gin.Context) {
 		})
 	}
 
-	err := database.Default().CreateHost(clusterID, h)
+	err := database.Instance().CreateHost(clusterID, h)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -45,7 +45,7 @@ func deleteHost(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 	hostID := c.Param("host_id")
 
-	err := database.Default().DeleteHost(clusterID, hostID)
+	err := database.Instance().DeleteHost(clusterID, hostID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -74,7 +74,7 @@ func updateHost(c *gin.Context) {
 		return
 	}
 
-	err := database.Default().UpdateHost(clusterID, h)
+	err := database.Instance().UpdateHost(clusterID, h)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -88,7 +88,7 @@ func retrieveHost(c *gin.Context) {
 	clusterID := c.Param("cluster_id")
 	hostID := c.Param("host_id")
 
-	h, err := database.Default().RetrieveHost(clusterID, hostID)
+	h, err := database.Instance().RetrieveHost(clusterID, hostID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

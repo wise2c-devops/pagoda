@@ -12,10 +12,14 @@ func TestInstantiate(t *testing.T) {
 		ID:   "1",
 		Components: []*database.Component{
 			&database.Component{
-				Name: "etcd",
+				MetaComponent: database.MetaComponent{
+					Name: "etcd",
+				},
 			},
 			&database.Component{
-				Name: "mysql",
+				MetaComponent: database.MetaComponent{
+					Name: "mysql",
+				},
 			},
 		},
 	}

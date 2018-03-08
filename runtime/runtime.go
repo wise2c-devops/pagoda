@@ -81,7 +81,7 @@ func newRuntime() *Runtime {
 
 func (cr *Runtime) startOperate(c *database.Cluster) {
 	cr.clusterID = c.ID
-	database.Default().DeleteLogs(c.ID)
+	database.Instance().DeleteLogs(c.ID)
 
 	//sorted components
 	sc := make([]string, 0, len(c.Components))
@@ -146,7 +146,7 @@ func (cr *Runtime) annul(name string) {
 }
 
 func (cr *Runtime) notify(n *database.Notification) {
-	if err := database.Default().CreateLog(cr.clusterID, n); err != nil {
+	if err := database.Instance().CreateLog(cr.clusterID, n); err != nil {
 		glog.Error(err)
 	}
 

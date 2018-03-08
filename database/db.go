@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"github.com/go-xorm/xorm"
 	"github.com/golang/glog"
@@ -18,53 +19,64 @@ type EngineConfig struct {
 	SQLType      string
 	ShowSQL      bool
 	ShowExecTime bool
-	DBURL        string
+	DBPath       string
 	InitSQL      string
 }
 
-var (
-	i *SQLEngine
-
-	sqlConfig = &EngineConfig{
-		SQLType:      "sqlite3",
-		ShowSQL:      false,
-		ShowExecTime: true,
-		DBURL:        "/deploy/cluster.db",
-		InitSQL:      "/root/table.sql",
-	}
+const (
+	sqlType = "sqlite3"
 )
 
-func Default() *SQLEngine {
-	return Instance(sqlConfig)
-}
+var (
+	i    *SQLEngine
+	once = &sync.Once{}
 
-func Instance(config *EngineConfig) *SQLEngine {
-	if i == nil {
-		var err error
-		i, err = NewEngine(config)
-		if err != nil {
-			panic(fmt.Sprintf("get sql engine instance error %v", err))
-		}
+	//DBPath - sqlite db file path
+	DBPath *string
+	//InitSQL - sql file to init db
+	InitSQL *string
+)
 
-		glog.V(3).Info("create sql engine instance")
-	}
+func Instance() *SQLEngine {
+	once.Do(instance)
 
 	return i
 }
 
-func NewEngine(config *EngineConfig) (*SQLEngine, error) {
-	e := &SQLEngine{}
-	if config.SQLType == "sqlite3" {
-		engine, err := xorm.NewEngine("sqlite3", config.DBURL)
-		if err != nil {
-			return nil, err
-		}
-		e.xe = engine
+func instance() {
+	sqlConfig := &EngineConfig{
+		SQLType:      sqlType,
+		ShowSQL:      false,
+		ShowExecTime: true,
+		DBPath:       *DBPath,
+		InitSQL:      *InitSQL,
 	}
+
+	var err error
+	i, err = newEngine(sqlConfig)
+	if err != nil {
+		panic(fmt.Sprintf("get sql engine instance error %v", err))
+	}
+
+	glog.V(1).Infof(
+		"Create SQL Engine Instance with [sqlType: %s, dbPath: %s, initSQL: %s]",
+		sqlConfig.SQLType,
+		sqlConfig.DBPath,
+		sqlConfig.InitSQL,
+	)
+}
+
+func newEngine(config *EngineConfig) (*SQLEngine, error) {
+	e := &SQLEngine{}
+	engine, err := xorm.NewEngine(config.SQLType, config.DBPath)
+	if err != nil {
+		return nil, err
+	}
+	e.xe = engine
 
 	e.xe.ShowSQL(config.ShowSQL)
 	e.xe.ShowExecTime(config.ShowExecTime)
-	_, err := e.xe.ImportFile(config.InitSQL)
+	_, err = e.xe.ImportFile(config.InitSQL)
 	return e, err
 }
 

@@ -80,7 +80,7 @@ func ConvertHosts(
 		hosts := make([]*database.Host, 0, len(v))
 
 		for _, h := range v {
-			hh, err := database.Default().RetrieveHost(clusterID, h)
+			hh, err := database.Instance().RetrieveHost(clusterID, h)
 			if err != nil {
 				return err
 			}

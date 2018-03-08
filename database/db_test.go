@@ -25,7 +25,7 @@ var (
 		SQLType:      "sqlite3",
 		ShowSQL:      false,
 		ShowExecTime: true,
-		DBURL:        "./cluster.db",
+		DBPath:       "./cluster.db",
 		InitSQL:      "./table.sql",
 	}
 
@@ -99,8 +99,8 @@ var (
 )
 
 func TestCluster(t *testing.T) {
-	os.Remove(tSQLConfig.DBURL)
-	ti := Instance(tSQLConfig)
+	os.Remove(tSQLConfig.DBPath)
+	ti := Instance()
 
 	var num int
 	for _, c := range tc {
@@ -158,7 +158,7 @@ func TestCluster(t *testing.T) {
 }
 
 func testComponent(t *testing.T) {
-	ti := Instance(tSQLConfig)
+	ti := Instance()
 
 	for _, c := range tc {
 		var num int
@@ -223,7 +223,7 @@ func testHost(t *testing.T) {
 		ShowSQL: false,
 	}
 
-	e, err := NewEngine(config)
+	e, err := newEngine(config)
 	if err != nil {
 		t.Error(err)
 	}
