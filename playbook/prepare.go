@@ -26,7 +26,7 @@ const (
 	tmplSuffix      = ".gotmpl"
 )
 
-func PreparePlaybooks(dir string, ds *DeploySeed2) error {
+func PreparePlaybooks(dir string, ds *DeploySeed) error {
 	for k, v := range map[string]*Component(*ds) {
 		if err := preparePlaybook(path.Join(dir, k+PlaybookSuffix, v.Version), ds); err != nil {
 			return err
@@ -36,7 +36,7 @@ func PreparePlaybooks(dir string, ds *DeploySeed2) error {
 	return nil
 }
 
-func preparePlaybook(name string, ds *DeploySeed2) error {
+func preparePlaybook(name string, ds *DeploySeed) error {
 	tps, err := getTemplatePath(name)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func preparePlaybook(name string, ds *DeploySeed2) error {
 	return nil
 }
 
-func applyTemplate(t *Template, ds *DeploySeed2) error {
+func applyTemplate(t *Template, ds *DeploySeed) error {
 	file, err := os.OpenFile(t.Dest, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0755)
 	if err != nil {
 		return fmt.Errorf("create template dest file %s error: %s", t.Dest, err)

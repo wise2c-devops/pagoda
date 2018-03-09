@@ -97,7 +97,7 @@ func (cr *Runtime) startOperate(c *database.Cluster) {
 	}
 }
 
-func (cr *Runtime) stopOperate(clusterID string) {
+func (cr *Runtime) stopOperate() {
 	cr.mux.Lock()
 	defer cr.mux.Unlock()
 

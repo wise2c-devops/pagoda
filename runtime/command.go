@@ -14,6 +14,14 @@ import (
 
 // Run - start command & runtime
 func Run(w string) {
+	cps, err := playbook.GetOrderedComponents()
+	if err != nil {
+		glog.Exitf("Have no components cat use: %v", err)
+	}
+	for i := 0; i < len(cps); i++ {
+		componentMap[cps[i]] = i
+	}
+
 	go command.Launch(w)
 	go runtime.run()
 }
@@ -49,28 +57,8 @@ const (
 	resetOperation   = "reset"
 )
 
-const (
-	docker       = "docker"
-	registry     = "registry"
-	etcd         = "etcd"
-	mysql        = "mysql"
-	loadbalancer = "loadbalancer"
-	k8sMaster    = "k8smaster"
-	k8sNode      = "k8snode"
-	wisecloud    = "wisecloud"
-)
-
 var (
-	componentMap = map[string]int{
-		docker:       0,
-		registry:     1,
-		etcd:         2,
-		mysql:        3,
-		loadbalancer: 4,
-		k8sMaster:    5,
-		k8sNode:      6,
-		wisecloud:    7,
-	}
+	componentMap = make(map[string]int)
 
 	runtime = newRuntime()
 	command = newCommand(runtime)
@@ -91,7 +79,7 @@ type commandT struct {
 	cluster     *database.Cluster
 	ansibleFile string
 	workDir     string
-	deploySeed  *playbook.DeploySeed2
+	deploySeed  *playbook.DeploySeed
 
 	stopChan    chan bool
 	nextChan    chan bool
@@ -110,6 +98,16 @@ func newCommand(runtime *Runtime) *commandT {
 		startChan:    make(chan *LaunchParameters),
 		runtime:      runtime,
 	}
+}
+
+func (c *commandT) reset() {
+	c.received = nil
+	c.currentIndex = -1
+	c.currentCmd = nil
+	c.cluster = nil
+	c.ansibleFile = ""
+
+	c.runtime.stopOperate()
 }
 
 func (c *commandT) Launch(w string) {
@@ -150,7 +148,7 @@ func (c *commandT) release() error {
 	case <-c.processChan:
 		return nil
 	default:
-		return fmt.Errorf("I have processed a action")
+		return fmt.Errorf("I'm not processing a action")
 	}
 }
 
@@ -212,6 +210,8 @@ func (c *commandT) run(w string) {
 
 func (c *commandT) complete(code completeCode) {
 	defer c.release()
+	defer c.reset()
+
 	switch code {
 	case finished:
 		if c.ansibleFile == installFile {
@@ -230,8 +230,7 @@ func (c *commandT) complete(code completeCode) {
 			c.cluster.State = database.Failed
 			glog.Errorf("stop install error: %v", err)
 		}
-		c.cluster = nil
-		c.currentCmd = nil
+		c.currentCmd.Wait()
 	case failed:
 		c.cluster.State = database.Failed
 		glog.V(3).Info("failed at a step")
@@ -242,7 +241,4 @@ func (c *commandT) complete(code completeCode) {
 		glog.Errorf("update cluster %s error %v", c.cluster.ID, err)
 		return
 	}
-
-	c.currentIndex = -1
-	c.runtime.stopOperate(c.cluster.ID)
 }

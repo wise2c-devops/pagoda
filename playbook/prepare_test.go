@@ -4,7 +4,7 @@ import "testing"
 import "gitee.com/wisecloud/wise-deploy/database"
 
 func TestPreparePlaybooks(t *testing.T) {
-	ds := &DeploySeed2{
+	ds := &DeploySeed{
 		"Registry": &Component{
 			Hosts: map[string][]*database.Host{
 				"self": []*database.Host{

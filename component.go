@@ -8,15 +8,11 @@ type Component struct {
 	Hosts map[string][]*database.Host `json:"hosts"`
 }
 
-func NewComponent(clusterID string, cp *database.Component) (*Component, error) {
+func NewComponent(clusterID string, cp *database.Component) *Component {
 	c := &Component{
 		MetaComponent: cp.MetaComponent,
-		Hosts:         make(map[string][]*database.Host),
+		Hosts:         playbook.ConvertHosts(clusterID, cp.Hosts),
 	}
 
-	if err := playbook.ConvertHosts(clusterID, cp.Hosts, c.Hosts); err != nil {
-		return nil, err
-	}
-
-	return c, nil
+	return c
 }

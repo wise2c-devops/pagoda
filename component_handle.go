@@ -21,13 +21,7 @@ func retrieveComponents(c *gin.Context) {
 
 	ccs := make([]*Component, 0, len(cs))
 	for _, cp := range cs {
-		cc, err := NewComponent(clusterID, cp)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
+		cc := NewComponent(clusterID, cp)
 		ccs = append(ccs, cc)
 	}
 
@@ -51,14 +45,8 @@ func createComponent(c *gin.Context) {
 			"error": err.Error(),
 		})
 	} else {
-		cc, err := NewComponent(clusterID, cp)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-		} else {
-			c.JSON(http.StatusOK, cc)
-		}
+		cc := NewComponent(clusterID, cp)
+		c.JSON(http.StatusOK, cc)
 	}
 }
 
@@ -101,14 +89,8 @@ func updateComponent(c *gin.Context) {
 			"error": err.Error(),
 		})
 	} else {
-		cc, err := NewComponent(clusterID, cp)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-		} else {
-			c.JSON(http.StatusOK, cc)
-		}
+		cc := NewComponent(clusterID, cp)
+		c.JSON(http.StatusOK, cc)
 	}
 }
 
@@ -124,7 +106,7 @@ func retrieveComponent(c *gin.Context) {
 		return
 	}
 
-	cc, err := NewComponent(clusterID, cp)
+	cc := NewComponent(clusterID, cp)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

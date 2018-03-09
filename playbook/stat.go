@@ -1,9 +1,11 @@
 package playbook
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 	"text/template"
@@ -16,7 +18,7 @@ import (
 func GetComponents(path string) []string {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		panic(fmt.Sprintf("get %s's avariable components error: %v", path, err))
+		panic(fmt.Sprintf("get %s's available components error: %v", path, err))
 	}
 
 	components := make([]string, 0, len(files))
@@ -69,4 +71,20 @@ func getInherentProperties(dir string, cp *Component) {
 	}
 
 	cp.Inherent = value
+}
+
+func GetOrderedComponents() ([]string, error) {
+	inFile, err := os.Open("components_order.conf")
+	if err != nil {
+		return nil, fmt.Errorf("read components order error: %v", err)
+	}
+	defer inFile.Close()
+
+	scanner := bufio.NewScanner(inFile)
+	ret := make([]string, 0)
+	for scanner.Scan() {
+		ret = append(ret, scanner.Text())
+	}
+
+	return ret, nil
 }

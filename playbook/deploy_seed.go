@@ -7,25 +7,14 @@ import (
 	"gitee.com/wisecloud/wise-deploy/database"
 )
 
-type DeploySeed2 map[string]*Component
+type DeploySeed map[string]*Component
 
-func NewDeploySeed(c *database.Cluster, workDir string) *DeploySeed2 {
-	cs := DeploySeed2(make(map[string]*Component))
+func NewDeploySeed(c *database.Cluster, workDir string) *DeploySeed {
+	cs := DeploySeed(make(map[string]*Component))
 	for _, cp := range c.Components {
-		hosts := make(map[string][]*database.Host)
-		for k, v := range cp.Hosts {
-			hs := make([]*database.Host, 0, len(v))
-			for _, h := range v {
-				host := getEntireHost(c, h)
-				hs = append(hs, host)
-			}
-
-			hosts[k] = hs
-		}
-
 		cs[cp.Name] = &Component{
 			MetaComponent: cp.MetaComponent,
-			Hosts:         hosts,
+			Hosts:         ConvertHosts(c.ID, cp.Hosts),
 		}
 
 		getInherentProperties(
@@ -37,7 +26,7 @@ func NewDeploySeed(c *database.Cluster, workDir string) *DeploySeed2 {
 	return &cs
 }
 
-func (ds *DeploySeed2) AllHosts() map[string]*database.Host {
+func (ds *DeploySeed) AllHosts() map[string]*database.Host {
 	hosts := make(map[string]*database.Host)
 	for _, v := range map[string]*Component(*ds) {
 		for _, hv := range v.Hosts {
@@ -56,33 +45,18 @@ type Component struct {
 	Hosts    map[string][]*database.Host
 }
 
-// func setComponentHost(
-// 	clusterID string,
-// 	sourceCp *database.Component,
-// 	destCp *Component,
-// 	workDir string,
-// ) error {
-// 	destCp.MetaComponent = sourceCp.MetaComponent
-
-// 	destCp.Inherent = getInherentProperties(
-// 		path.Join(workDir, sourceCp.Name+PlaybookSuffix, sourceCp.Version),
-// 	)
-
-// 	return ConvertHosts(clusterID, sourceCp.Hosts, destCp.Hosts)
-// }
-
 func ConvertHosts(
 	clusterID string,
 	sourceHosts map[string][]string,
-	destHost map[string][]*database.Host,
-) error {
+) map[string][]*database.Host {
+	destHost := make(map[string][]*database.Host)
 	for k, v := range sourceHosts {
 		hosts := make([]*database.Host, 0, len(v))
 
 		for _, h := range v {
 			hh, err := database.Instance().RetrieveHost(clusterID, h)
 			if err != nil {
-				return err
+				panic(fmt.Sprintf("find the host %s error: %v", h, err))
 			}
 			hosts = append(hosts, hh)
 		}
@@ -90,15 +64,5 @@ func ConvertHosts(
 		destHost[k] = hosts
 	}
 
-	return nil
-}
-
-func getEntireHost(c *database.Cluster, host string) *database.Host {
-	for _, h := range c.Hosts {
-		if host == h.ID {
-			return h
-		}
-	}
-
-	panic(fmt.Sprintf("can't find the host: %s", host))
+	return destHost
 }

@@ -38,5 +38,13 @@ func retrieveClusterStatus(c *gin.Context) {
 }
 
 func components(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, playbook.GetComponents(*workDir))
+	ret, err := playbook.GetOrderedComponents()
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, ret)
 }
