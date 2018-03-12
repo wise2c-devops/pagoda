@@ -1,7 +1,7 @@
 package main
 
-import "gitee.com/wisecloud/wise-deploy/database"
-import "gitee.com/wisecloud/wise-deploy/playbook"
+import "github.com/wise2c-devops/pagoda/database"
+import "github.com/wise2c-devops/pagoda/playbook"
 
 type Component struct {
 	database.MetaComponent

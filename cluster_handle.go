@@ -3,10 +3,9 @@ package main
 import (
 	"net/http"
 
-	"gitee.com/wisecloud/wise-deploy/database"
-
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/render"
+	"github.com/wise2c-devops/pagoda/database"
 )
 
 func retrieveClusters(c *gin.Context) {

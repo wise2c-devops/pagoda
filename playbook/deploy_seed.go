@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path"
 
-	"gitee.com/wisecloud/wise-deploy/database"
+	"github.com/wise2c-devops/pagoda/database"
 )
 
 type DeploySeed map[string]*Component

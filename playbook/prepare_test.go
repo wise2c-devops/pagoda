@@ -1,7 +1,7 @@
 package playbook
 
 import "testing"
-import "gitee.com/wisecloud/wise-deploy/database"
+import "github.com/wise2c-devops/pagoda/database"
 
 func TestPreparePlaybooks(t *testing.T) {
 	ds := &DeploySeed{

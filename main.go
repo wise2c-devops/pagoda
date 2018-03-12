@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"path"
 
-	"gitee.com/wisecloud/wise-deploy/database"
-	"gitee.com/wisecloud/wise-deploy/playbook"
-	"gitee.com/wisecloud/wise-deploy/runtime"
+	"github.com/wise2c-devops/pagoda/database"
+	"github.com/wise2c-devops/pagoda/playbook"
+	"github.com/wise2c-devops/pagoda/runtime"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

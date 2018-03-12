@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"gitee.com/wisecloud/wise-deploy/database"
+	"github.com/wise2c-devops/pagoda/database"
 
 	"github.com/golang/glog"
 )

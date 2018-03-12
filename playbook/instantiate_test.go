@@ -3,7 +3,7 @@ package playbook
 import (
 	"testing"
 
-	"gitee.com/wisecloud/wise-deploy/database"
+	"github.com/wise2c-devops/pagoda/database"
 )
 
 func TestInstantiate(t *testing.T) {

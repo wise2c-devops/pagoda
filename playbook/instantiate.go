@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/glog"
 
-	"gitee.com/wisecloud/wise-deploy/database"
+	"github.com/wise2c-devops/pagoda/database"
 )
 
 const (

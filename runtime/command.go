@@ -6,8 +6,8 @@ import (
 	"path"
 	"sort"
 
-	"gitee.com/wisecloud/wise-deploy/database"
-	"gitee.com/wisecloud/wise-deploy/playbook"
+	"github.com/wise2c-devops/pagoda/database"
+	"github.com/wise2c-devops/pagoda/playbook"
 
 	"github.com/golang/glog"
 )

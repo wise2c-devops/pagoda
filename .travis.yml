@@ -11,8 +11,8 @@ before_install:
 - docker pull ymian/golang:alpine-gcc
 
 script:
-- docker run -v $(pwd):/go/src/github.com/wise2c-devops/pagoda ymian/golang:alpine-gcc go build
-- docker build -t wise2c/pagoda:$TRAVIS_BRANCH
+- docker run -v $(pwd):/go/src/github.com/wise2c-devops/pagoda -w /go/src/github.com/wise2c-devops/pagoda ymian/golang:alpine-gcc go build
+- docker build -t wise2c/pagoda:$TRAVIS_BRANCH .
 
 deploy:
   provider: script
