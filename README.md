@@ -1,2 +1,2 @@
-# wise-deploy
-部署方案API
+# pagoda
+Server offer a API to operate Ansible playbook
