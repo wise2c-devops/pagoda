@@ -14,7 +14,7 @@ import (
 
 // Run - start command & runtime
 func Run(w string) {
-	cps, err := playbook.GetOrderedComponents()
+	cps, err := playbook.GetOrderedComponents(w)
 	if err != nil {
 		glog.Exitf("Have no components cat use: %v", err)
 	}

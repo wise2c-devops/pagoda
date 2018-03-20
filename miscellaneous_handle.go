@@ -38,7 +38,7 @@ func retrieveClusterStatus(c *gin.Context) {
 }
 
 func components(c *gin.Context) {
-	ret, err := playbook.GetOrderedComponents()
+	ret, err := playbook.GetOrderedComponents(*workDir)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

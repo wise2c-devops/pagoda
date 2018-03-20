@@ -73,8 +73,8 @@ func getInherentProperties(dir string, cp *Component) {
 	cp.Inherent = value
 }
 
-func GetOrderedComponents() ([]string, error) {
-	inFile, err := os.Open("components_order.conf")
+func GetOrderedComponents(dir string) ([]string, error) {
+	inFile, err := os.Open(path.Join(dir, "components_order.conf"))
 	if err != nil {
 		return nil, fmt.Errorf("read components order error: %v", err)
 	}
