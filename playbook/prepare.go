@@ -64,6 +64,7 @@ func applyTemplate(t *Template, ds *DeploySeed) error {
 	}
 
 	tp := template.Must(template.New("ansible").Funcs(fns).Parse(string(content)))
+	tp.Option("missingkey=zero")
 	err = tp.Execute(file, ds)
 	if err != nil {
 		return fmt.Errorf("execute template for %s error: %v", t.Dest, err)
