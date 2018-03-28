@@ -230,7 +230,6 @@ func (c *commandT) complete(code completeCode) {
 			c.cluster.State = database.Failed
 			glog.Errorf("stop install error: %v", err)
 		}
-		c.currentCmd.Wait()
 	case failed:
 		c.cluster.State = database.Failed
 		glog.V(3).Info("failed at a step")
