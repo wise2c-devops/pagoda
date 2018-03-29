@@ -43,7 +43,7 @@ func TestPreparePlaybooks(t *testing.T) {
 				Version: "v1.8.6",
 			},
 			Inherent: map[string]interface{}{
-				"endpoint": "192.168.10.1",
+				"endpoint": true,
 			},
 		},
 		// "wisecloud": &Component{

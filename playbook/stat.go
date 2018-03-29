@@ -70,6 +70,7 @@ func getInherentProperties(dir string, cp *Component) {
 	if err := yaml.Unmarshal(buf.Bytes(), &value); err != nil {
 		glog.Warningf("unmarshal inherent error: %s", err)
 	}
+	glog.V(2).Infof("genereate inherent property: %s", buf.Bytes())
 
 	cp.Inherent = value
 }
