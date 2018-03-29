@@ -231,9 +231,9 @@ func (c *commandT) complete(code completeCode) {
 			return
 		}
 		if err := c.currentCmd.Process.Kill(); err != nil {
-			c.cluster.State = database.Failed
 			glog.Errorf("stop install error: %v", err)
 		}
+		c.cluster.State = database.Failed
 	case failed:
 		c.cluster.State = database.Failed
 		glog.V(3).Info("failed at a step")

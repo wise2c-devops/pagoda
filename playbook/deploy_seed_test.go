@@ -27,6 +27,9 @@ func TestNewDeploySeed(t *testing.T) {
 							MetaComponent: database.MetaComponent{
 								Name:    "kubernetes",
 								Version: "v1.8.6",
+								Property: map[string]interface{}{
+									"endpoint": "192.168.112.23",
+								},
 							},
 						},
 					},
@@ -36,10 +39,14 @@ func TestNewDeploySeed(t *testing.T) {
 			want: &DeploySeed{
 				"kubernetes": &Component{
 					MetaComponent: database.MetaComponent{
-						Name: "kubernetes",
+						Name:    "kubernetes",
+						Version: "v1.8.6",
+						Property: map[string]interface{}{
+							"endpoint": "192.168.112.23",
+						},
 					},
 					Inherent: map[string]interface{}{
-						"endpoint": 123,
+						"endpoint": "192.168.112.23",
 					},
 				},
 			},
