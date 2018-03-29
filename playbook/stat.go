@@ -60,6 +60,7 @@ func getInherentProperties(dir string, cp *Component) {
 
 	tp := template.Must(template.New("inherent").Funcs(fns).Parse(string(bs)))
 	err = tp.Execute(buf, cp)
+	tp.Option("missingkey=zero")
 	if err != nil {
 		glog.Warningf(fmt.Sprintf("execute template for %s/inherent.yaml error: %v", dir, err))
 		return

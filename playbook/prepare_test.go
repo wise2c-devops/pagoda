@@ -5,51 +5,57 @@ import "github.com/wise2c-devops/pagoda/database"
 
 func TestPreparePlaybooks(t *testing.T) {
 	ds := &DeploySeed{
-		"Registry": &Component{
+		// "registry": &Component{
+		// 	Hosts: map[string][]*database.Host{
+		// 		"self": []*database.Host{
+		// 			&database.Host{IP: "192.168.0.101"},
+		// 		},
+		// 	},
+		// },
+		// "etcd": &Component{
+		// 	Hosts: map[string][]*database.Host{
+		// 		"self": []*database.Host{
+		// 			&database.Host{IP: "192.168.0.101"},
+		// 		},
+		// 	},
+		// },
+		// "mysql": &Component{
+		// 	Hosts: map[string][]*database.Host{
+		// 		"self": []*database.Host{
+		// 			&database.Host{IP: "192.168.0.101"},
+		// 		},
+		// 	},
+		// },
+		// "loadbalancer": &Component{
+		// 	Hosts: map[string][]*database.Host{
+		// 		"self": []*database.Host{
+		// 			&database.Host{IP: "192.168.0.101"},
+		// 		},
+		// 	},
+		// },
+		"kubernetes": &Component{
 			Hosts: map[string][]*database.Host{
-				"self": []*database.Host{
+				"master": []*database.Host{
 					&database.Host{IP: "192.168.0.101"},
 				},
 			},
-		},
-		"Etcd": &Component{
-			Hosts: map[string][]*database.Host{
-				"self": []*database.Host{
-					&database.Host{IP: "192.168.0.101"},
-				},
+			MetaComponent: database.MetaComponent{
+				Version: "v1.8.6",
+			},
+			Inherent: map[string]interface{}{
+				"endpoint": "192.168.10.1",
 			},
 		},
-		"MySQL": &Component{
-			Hosts: map[string][]*database.Host{
-				"self": []*database.Host{
-					&database.Host{IP: "192.168.0.101"},
-				},
-			},
-		},
-		"LoadBalancer": &Component{
-			Hosts: map[string][]*database.Host{
-				"self": []*database.Host{
-					&database.Host{IP: "192.168.0.101"},
-				},
-			},
-		},
-		"K8sMaster": &Component{
-			Hosts: map[string][]*database.Host{
-				"self": []*database.Host{
-					&database.Host{IP: "192.168.0.101"},
-				},
-			},
-		},
-		"WiseCloud": &Component{
-			Hosts: map[string][]*database.Host{
-				"self": []*database.Host{
-					&database.Host{IP: "192.168.0.101"},
-				},
-			},
-		},
+		// "wisecloud": &Component{
+		// 	Hosts: map[string][]*database.Host{
+		// 		"self": []*database.Host{
+		// 			&database.Host{IP: "192.168.0.101"},
+		// 		},
+		// 	},
+		// },
 	}
 
-	if err := PreparePlaybooks("/home/mian/workspace/wise2c-playbook/", ds); err != nil {
+	if err := PreparePlaybooks(".", ds); err != nil {
 		t.Error(err)
 	}
 }

@@ -117,7 +117,11 @@ func (c *commandT) Launch(w string) {
 		case <-c.stopChan:
 			c.complete(stopped)
 		case next := <-c.nextChan:
-			if next && c.cluster != nil {
+			if c.cluster == nil {
+				break
+			}
+
+			if next {
 				c.currentIndex++
 				if c.currentIndex == len(c.received) {
 					c.complete(finished)
