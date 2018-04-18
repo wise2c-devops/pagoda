@@ -14,4 +14,4 @@ deploy:
   on:
     tags: true
     all_branches: true
-    condition: "$TRAVIS_BRANCH =~ ^v\d+\.\d+(\.\d+)?(-\S*)?$"
+    condition: "$TRAVIS_BRANCH =~ ^v\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$"
