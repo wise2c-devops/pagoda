@@ -8,6 +8,7 @@ script:
 - docker build -t wise2c/pagoda:$TRAVIS_BRANCH .
 
 deploy:
+  provider: script
   script:
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
   - docker push wise2c/pagoda:$TRAVIS_BRANCH
