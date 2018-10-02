@@ -38,7 +38,7 @@ var (
 			&Cluster{
 				Name:        "Test",
 				State:       Initial,
-				Description: "for mian unit test",
+				Description: "for main unit test",
 			},
 			true,
 			Success,

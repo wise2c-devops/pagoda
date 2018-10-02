@@ -24,7 +24,7 @@ func TestInstantiate(t *testing.T) {
 		},
 	}
 
-	if err := InstantiateCluster("/home/mian/workspace/wise2c-playbook/", c); err != nil {
+	if err := InstantiateCluster("/home/wise2c-devops/workspace/wise2c-playbook/", c); err != nil {
 		t.Error(err.Error())
 	} else {
 		t.Log("hehe")
