@@ -1,0 +1,16 @@
+sudo: required
+
+services:
+- docker
+
+script:
+- docker build -t wise2c-devops/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
+- docker run -v $(pwd):/go/src/github.com/wise2c-devops/pagoda -w /go/src/github.com/wise2c-devops/pagoda wise2c-devops/golang:alpine-gcc go build
+- docker build -t wise2ck8s/pagoda:$TRAVIS_BRANCH .
+
+deploy:
+  provider: script
+  script: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD && docker push wise2c/pagoda:$TRAVIS_BRANCH
+  on:
+    all_branches: true
+    condition: "$TRAVIS_BRANCH =~ ^v[0-9]+\\.[0-9]+(\\.[0-9]+)?(-\\S*)?$"
