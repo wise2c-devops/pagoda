@@ -1,4 +1,4 @@
-FROM generik/ansible:v2.5
+FROM generik/ansible:v2.7
 
 WORKDIR /deploy
 VOLUME [ "/deploy" ]
