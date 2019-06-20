@@ -287,7 +287,33 @@ func (e *SQLEngine) CreateHost(clusterID string, h *Host) error {
 }
 
 func (e *SQLEngine) DeleteHost(clusterID string, hostID string) error {
-	_, err := e.xe.Exec(
+	//check if there has components are running on host, if is,never delete host
+	var components []*ClusterComponent
+	var err error
+	err = e.xe.Where("cluster_id = ?",clusterID).Find(&components)
+	if err !=nil {
+		return fmt.Errorf("get cluster components error -> %s", err.Error())
+	}
+
+	var hostHasComponent bool
+	if len(components) > 0 {
+		for _,v:=range components {
+			for _,vv:=range v.Component.Hosts {
+				for _,vvv := range vv {
+					if vvv == hostID {
+						hostHasComponent = true
+						goto checkHostHasComponent
+					}
+				}
+			}
+		}
+	}
+checkHostHasComponent:
+	if hostHasComponent {
+		return fmt.Errorf("host=%s in cluster=%s has running components,so host could not be deleted", hostID,clusterID)
+	}
+
+	_, err = e.xe.Exec(
 		"delete from cluster_host where cluster_id = ? and host_id = ?",
 		clusterID,
 		hostID,
