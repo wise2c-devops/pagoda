@@ -1,4 +1,6 @@
-FROM generik/ansible:v2.7.3
+FROM docker.io/cytopia/ansible:latest-infra-0.34
+
+RUN ansible-galaxy collection install containers.podman
 
 WORKDIR /deploy
 VOLUME [ "/deploy" ]

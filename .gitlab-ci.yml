@@ -1,0 +1,11 @@
+build_image:
+  image: docker:git
+  services:
+    - docker:dind
+  script:
+    - docker build -t wise2c-devops/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
+    - docker run -v $(pwd):/go/src/github.com/wise2c-devops/pagoda -w /go/src/github.com/wise2c-devops/pagoda wise2c-devops/golang:alpine-gcc go build
+    - docker build -t wise2c/pagoda:$CI_COMMIT_REF_NAME .
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+    - docker push wise2c/pagoda:$CI_COMMIT_REF_NAME
+  when: always
