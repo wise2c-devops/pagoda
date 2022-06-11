@@ -1,6 +1,6 @@
-FROM docker.io/cytopia/ansible:latest-infra-0.34
+FROM docker.io/cytopia/ansible:latest-infra-0.39
 
-RUN ansible-galaxy collection install containers.podman
+RUN ansible-galaxy collection install containers.podman community.docker
 
 WORKDIR /deploy
 VOLUME [ "/deploy" ]
