@@ -1,4 +1,6 @@
-FROM jfxs/ansible:2.9
+FROM docker.io/cytopia/ansible:latest-infra-0.40
+
+RUN ansible-galaxy collection install containers.podman
 
 WORKDIR /deploy
 VOLUME [ "/deploy" ]
