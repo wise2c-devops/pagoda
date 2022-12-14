@@ -1,4 +1,4 @@
-FROM docker.io/cytopia/ansible:latest-infra-0.34
+FROM docker.io/cytopia/ansible:latest-infra-0.40
 
 RUN ansible-galaxy collection install containers.podman
 
