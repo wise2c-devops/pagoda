@@ -6,7 +6,7 @@ jobs:
       - run:
           name: Build an amd64 container image
           command: |
-            docker build -t wise2c/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
+            docker build -t wise2c-devops/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
             docker run -v $(pwd):/go/src/github.com/wise2c-devops/pagoda -w /go/src/github.com/wise2c-devops/pagoda wise2c-devops/golang:alpine-gcc go build
             docker build -t wise2c/pagoda:amd64-$CIRCLE_BRANCH .
             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
@@ -19,7 +19,7 @@ jobs:
       - run:
           name: Build an amd64 container image
           command: |
-            docker build -t wise2c/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
+            docker build -t wise2c-devops/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
             docker run -v $(pwd):/go/src/github.com/wise2c-devops/pagoda -w /go/src/github.com/wise2c-devops/pagoda wise2c-devops/golang:alpine-gcc go build
             docker build -t wise2c/pagoda:amd64-$CIRCLE_TAG .
             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
@@ -33,7 +33,7 @@ jobs:
       - run:
           name: Build an aarch64 container image
           command: |
-            docker build -t wise2c/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
+            docker build -t wise2c-devops/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
             docker run -v $(pwd):/go/src/github.com/wise2c-devops/pagoda -w /go/src/github.com/wise2c-devops/pagoda wise2c-devops/golang:alpine-gcc go build
             docker build -t wise2c/pagoda:aarch64-$CIRCLE_BRANCH .
             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
@@ -47,7 +47,7 @@ jobs:
       - run:
           name: Build an aarch64 container image
           command: |
-            docker build -t wise2c/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
+            docker build -t wise2c-devops/golang:alpine-gcc -f golang-gcc/Dockerfile golang-gcc
             docker run -v $(pwd):/go/src/github.com/wise2c-devops/pagoda -w /go/src/github.com/wise2c-devops/pagoda wise2c-devops/golang:alpine-gcc go build
             docker build -t wise2c/pagoda:aarch64-$CIRCLE_TAG .
             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
